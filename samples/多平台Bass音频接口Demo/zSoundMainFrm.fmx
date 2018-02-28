@@ -1,0 +1,101 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 363
+  ClientWidth = 723
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 0
+  object Button1: TButton
+    StyledSettings = [Family, Style, FontColor]
+    Position.X = 8.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 145.000000000000000000
+    Size.Height = 49.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+    Text = #38899#20048
+    OnClick = Button1Click
+  end
+  object Button2: TButton
+    StyledSettings = [Family, Style, FontColor]
+    Position.X = 160.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 145.000000000000000000
+    Size.Height = 49.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 3
+    Text = #20572#27490
+    OnClick = Button2Click
+  end
+  object Button3: TButton
+    StyledSettings = [Family, Style, FontColor]
+    Position.X = 8.000000000000000000
+    Position.Y = 96.000000000000000000
+    Size.Width = 145.000000000000000000
+    Size.Height = 49.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 5
+    Text = #32972#26223#38899#25928
+    OnClick = Button3Click
+  end
+  object Button4: TButton
+    StyledSettings = [Family, Style, FontColor]
+    Position.X = 160.000000000000000000
+    Position.Y = 96.000000000000000000
+    Size.Width = 145.000000000000000000
+    Size.Height = 49.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    Text = #20572#27490
+    OnClick = Button4Click
+  end
+  object Button5: TButton
+    StyledSettings = [Family, Style, FontColor]
+    Position.X = 8.000000000000000000
+    Position.Y = 192.000000000000000000
+    Size.Width = 145.000000000000000000
+    Size.Height = 49.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    Text = #38899#25928
+    OnClick = Button5Click
+  end
+  object Button6: TButton
+    StyledSettings = [Family, Style, FontColor]
+    Position.X = 160.000000000000000000
+    Position.Y = 192.000000000000000000
+    Size.Width = 145.000000000000000000
+    Size.Height = 49.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Text = #20572#27490
+    OnClick = Button6Click
+  end
+  object Memo1: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Lines.Strings = (
+      #35813'Demo'#28436#31034#20102#22810#36335#28151#21512#25773#25918
+      ''
+      #22914#26524#22312'Windows'#20351#29992#35813'Demo'#65292#38656#35201#37096#32626'Bass'#30340#21160#24577#24211
+      ''
+      #22240#20026'Bass'#19981#25903#25345'Wav'#65292'Bass'#21482#33021#25903#25345'Mp3'
+      #25171#21253#38899#39057#25991#20214#26102#27880#24847#21306#20998)
+    ReadOnly = True
+    StyledSettings = [Family, Style, FontColor]
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    Position.X = 320.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 393.000000000000000000
+    Size.Height = 345.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 7
+    Viewport.Width = 389.000000000000000000
+    Viewport.Height = 341.000000000000000000
+  end
+end

@@ -1,2 +1,6 @@
 # zSound
-SoundEngine for All Platform(Android,IOS,OSX,Windows),supported delphi VCL/delphi FMX/fpc
+
+zSound是从游戏引擎剥离而出的跨平台音频引擎
+
+它支持所有桌面和手机平台
+
