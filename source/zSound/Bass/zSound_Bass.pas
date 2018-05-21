@@ -374,9 +374,9 @@ end;
 
 destructor TSoundEngine_Bass.Destroy;
 begin
-  disposeObject(SoundList);
   StopAll;
   SoundEngine_Bass := nil;
+  disposeObject(SoundList);
   inherited Destroy;
 end;
 
