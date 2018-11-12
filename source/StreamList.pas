@@ -6,6 +6,8 @@
 { * https://github.com/PassByYou888/zTranslate                                 * }
 { * https://github.com/PassByYou888/zSound                                     * }
 { * https://github.com/PassByYou888/zAnalysis                                  * }
+{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/zRasterization                             * }
 { ****************************************************************************** }
 (*
   update history
@@ -13,25 +15,24 @@
 
 unit StreamList;
 
-{$I zDefine.inc}
+{$INCLUDE zDefine.inc}
 
 interface
 
-uses SysUtils, ObjectDataManager, ItemStream, CoreClasses, PascalStrings,
-  ListEngine;
+uses SysUtils, ObjectDataManager, ItemStream, CoreClasses, PascalStrings, ListEngine;
 
 type
   THashStreamList = class;
 
-  THashStreamListData = packed record
+  THashStreamListData = record
     qHash: THash;
     LowerCaseName, OriginName: SystemString;
-    Stream: TItemStream;
+    stream: TItemStream;
     ItemHnd: TItemHandle;
     CallCount: Integer;
     ForceFreeCustomObject: Boolean;
     CustomObject: TCoreClassObject;
-    id: Integer;
+    ID: Integer;
     Owner: THashStreamList;
   end;
 
@@ -39,16 +40,16 @@ type
 
   THashStreamList = class(TCoreClassObject)
   protected
-    FCounter    : Boolean;
-    FCount      : Integer;
-    FName       : SystemString;
+    FCounter: Boolean;
+    FCount: Integer;
+    FName: SystemString;
     FDescription: SystemString;
-    FDBEngine   : TObjectDataManager;
-    FFieldPos   : Int64;
-    FAryList    : packed array of TCoreClassList;
-    FData       : Pointer;
+    FDBEngine: TObjectDataManager;
+    FFieldPos: Int64;
+    FAryList: array of TCoreClassList;
+    FData: Pointer;
 
-    function GetListTable(Hash: THash; AutoCreate: Boolean): TCoreClassList;
+    function GetListTable(hash: THash; AutoCreate: Boolean): TCoreClassList;
     procedure RefreshDBLst(aDBEngine: TObjectDataManager; var aFieldPos: Int64);
   public
     constructor Create(aDBEngine: TObjectDataManager; aFieldPos: Int64);
@@ -60,17 +61,17 @@ type
     procedure GetOriginNameList(OutputList: TCoreClassStrings); overload;
     procedure GetOriginNameList(OutputList: TListString); overload;
     procedure GetList(OutputList: TCoreClassList);
-    function Find(aName: SystemString): PHashStreamListData;
-    function Exists(aName: SystemString): Boolean;
+    function Find(AName: SystemString): PHashStreamListData;
+    function Exists(AName: SystemString): Boolean;
 
     procedure SetHashBlockCount(cnt: Integer);
 
-    function GetItem(aName: SystemString): PHashStreamListData;
-    property Names[aName: SystemString]: PHashStreamListData read GetItem; default;
+    function GetItem(AName: SystemString): PHashStreamListData;
+    property Names[AName: SystemString]: PHashStreamListData read GetItem; default;
 
     property DBEngine: TObjectDataManager read FDBEngine;
     property FieldPos: Int64 read FFieldPos;
-    property name: SystemString read FName write FName;
+    property Name: SystemString read FName write FName;
     property Description: SystemString read FDescription write FDescription;
     property Counter: Boolean read FCounter write FCounter;
     property Count: Integer read FCount;
@@ -100,11 +101,11 @@ end;
 
 procedure THashStreamList.Clear;
 var
-  i            : Integer;
+  i: Integer;
   Rep_Int_Index: Integer;
 begin
   FCount := 0;
-  if Length(FAryList) = 0 then
+  if length(FAryList) = 0 then
       Exit;
 
   for i := low(FAryList) to high(FAryList) do
@@ -119,9 +120,9 @@ begin
                     begin
                       with PHashStreamListData(Items[Rep_Int_Index])^ do
                         begin
-                          if Stream <> nil then
+                          if stream <> nil then
                             begin
-                              DisposeObject(Stream);
+                              DisposeObject(stream);
                               if (ForceFreeCustomObject) and (CustomObject <> nil) then
                                 begin
                                   try
@@ -146,49 +147,49 @@ begin
     end;
 end;
 
-function THashStreamList.GetListTable(Hash: THash; AutoCreate: Boolean): TCoreClassList;
+function THashStreamList.GetListTable(hash: THash; AutoCreate: Boolean): TCoreClassList;
 var
-  Idx: Integer;
+  idx: Integer;
 begin
-  Idx := Hash mod Length(FAryList);
+  idx := hashMod(hash, length(FAryList));
 
-  if (AutoCreate) and (FAryList[Idx] = nil) then
-      FAryList[Idx] := TCoreClassList.Create;
-  Result := FAryList[Idx];
+  if (AutoCreate) and (FAryList[idx] = nil) then
+      FAryList[idx] := TCoreClassList.Create;
+  Result := FAryList[idx];
 end;
 
 procedure THashStreamList.RefreshDBLst(aDBEngine: TObjectDataManager; var aFieldPos: Int64);
 var
   ItemSearchHnd: TItemSearch;
-  iCnt         : Integer;
+  ICnt: Integer;
 
   procedure AddLstItem(_ItemPos: Int64);
   var
-    NewHash: THash;
-    p      : PHashStreamListData;
-    idxLst : TCoreClassList;
-    lName  : SystemString;
+    newhash: THash;
+    p: PHashStreamListData;
+    idxLst: TCoreClassList;
+    lName: SystemString;
     ItemHnd: TItemHandle;
   begin
     if FDBEngine.ItemFastOpen(_ItemPos, ItemHnd) then
       if umlGetLength(ItemHnd.Name) > 0 then
         begin
           lName := ItemHnd.Name.LowerText;
-          NewHash := MakeHash(lName);
-          idxLst := GetListTable(NewHash, True);
-          New(p);
-          p^.qHash := NewHash;
+          newhash := MakeHashS(@lName);
+          idxLst := GetListTable(newhash, True);
+          new(p);
+          p^.qHash := newhash;
           p^.LowerCaseName := lName;
           p^.OriginName := ItemHnd.Name;
-          p^.Stream := nil;
+          p^.stream := nil;
           p^.ItemHnd := ItemHnd;
           p^.CallCount := 0;
           p^.ForceFreeCustomObject := False;
           p^.CustomObject := nil;
-          p^.id := iCnt;
+          p^.ID := ICnt;
           p^.Owner := Self;
           idxLst.Add(p);
-          Inc(iCnt);
+          inc(ICnt);
         end;
   end;
 
@@ -196,11 +197,11 @@ begin
   FDBEngine := aDBEngine;
   FFieldPos := aFieldPos;
   FCount := 0;
-  iCnt := 0;
+  ICnt := 0;
   if FDBEngine.ItemFastFindFirst(FFieldPos, '*', ItemSearchHnd) then
     begin
       repeat
-        Inc(FCount);
+        inc(FCount);
         AddLstItem(ItemSearchHnd.HeaderPOS);
       until not FDBEngine.ItemFastFindNext(ItemSearchHnd);
     end;
@@ -288,18 +289,18 @@ end;
 
 procedure THashStreamList.GetList(OutputList: TCoreClassList);
   function ListSortCompare(Item1, Item2: Pointer): Integer;
-    function aCompareValue(const A, B: Int64): Integer; inline;
+    function aCompareValue(const a, b: Int64): Integer;
     begin
-      if A = B then
+      if a = b then
           Result := 0
-      else if A < B then
+      else if a < b then
           Result := -1
       else
           Result := 1;
     end;
 
   begin
-    Result := aCompareValue(PHashStreamListData(Item1)^.id, PHashStreamListData(Item2)^.id);
+    Result := aCompareValue(PHashStreamListData(Item1)^.ID, PHashStreamListData(Item2)^.ID);
   end;
 
   procedure QuickSortList(var SortList: TCoreClassPointerList; L, r: Integer);
@@ -313,9 +314,9 @@ procedure THashStreamList.GetList(OutputList: TCoreClassList);
       p := SortList[(L + r) shr 1];
       repeat
         while ListSortCompare(SortList[i], p) < 0 do
-            Inc(i);
+            inc(i);
         while ListSortCompare(SortList[j], p) > 0 do
-            Dec(j);
+            dec(j);
         if i <= j then
           begin
             if i <> j then
@@ -324,8 +325,8 @@ procedure THashStreamList.GetList(OutputList: TCoreClassList);
                 SortList[i] := SortList[j];
                 SortList[j] := t;
               end;
-            Inc(i);
-            Dec(j);
+            inc(i);
+            dec(j);
           end;
       until i > j;
       if L < j then
@@ -335,7 +336,7 @@ procedure THashStreamList.GetList(OutputList: TCoreClassList);
   end;
 
 var
-  i            : Integer;
+  i: Integer;
   Rep_Int_Index: Integer;
 begin
   OutputList.Clear;
@@ -354,12 +355,12 @@ begin
                     for Rep_Int_Index := 0 to Count - 1 do
                       with PHashStreamListData(Items[Rep_Int_Index])^ do
                         begin
-                          if Stream = nil then
-                              Stream := TItemStream.Create(FDBEngine, ItemHnd)
+                          if stream = nil then
+                              stream := TItemStream.Create(FDBEngine, ItemHnd)
                           else
-                              Stream.SeekStart;
+                              stream.SeekStart;
                           if FCounter then
-                              Inc(CallCount);
+                              inc(CallCount);
                           OutputList.Add(Items[Rep_Int_Index]);
                         end;
                   end;
@@ -371,9 +372,9 @@ begin
     end;
 end;
 
-function THashStreamList.Find(aName: SystemString): PHashStreamListData;
+function THashStreamList.Find(AName: SystemString): PHashStreamListData;
 var
-  i            : Integer;
+  i: Integer;
   Rep_Int_Index: Integer;
 begin
   Result := nil;
@@ -386,15 +387,15 @@ begin
               begin
                 for Rep_Int_Index := 0 to Count - 1 do
                   begin
-                    if umlMultipleMatch(True, aName, PHashStreamListData(Items[Rep_Int_Index])^.OriginName) then
+                    if umlMultipleMatch(True, AName, PHashStreamListData(Items[Rep_Int_Index])^.OriginName) then
                       begin
                         Result := Items[Rep_Int_Index];
-                        if Result^.Stream = nil then
-                            Result^.Stream := TItemStream.Create(FDBEngine, Result^.ItemHnd)
+                        if Result^.stream = nil then
+                            Result^.stream := TItemStream.Create(FDBEngine, Result^.ItemHnd)
                         else
-                            Result^.Stream.SeekStart;
+                            Result^.stream.SeekStart;
                         if FCounter then
-                            Inc(Result^.CallCount);
+                            inc(Result^.CallCount);
                         Exit;
                       end;
                   end;
@@ -403,23 +404,23 @@ begin
     end;
 end;
 
-function THashStreamList.Exists(aName: SystemString): Boolean;
+function THashStreamList.Exists(AName: SystemString): Boolean;
 var
-  NewHash: THash;
-  i      : Integer;
-  idxLst : TCoreClassList;
-  lName  : SystemString;
+  newhash: THash;
+  i: Integer;
+  idxLst: TCoreClassList;
+  lName: SystemString;
 begin
   Result := False;
-  if umlGetLength(aName) > 0 then
+  if umlGetLength(AName) > 0 then
     begin
-      lName := LowerCase(aName);
-      NewHash := MakeHash(lName);
-      idxLst := GetListTable(NewHash, False);
+      lName := LowerCase(AName);
+      newhash := MakeHashS(@lName);
+      idxLst := GetListTable(newhash, False);
       if idxLst <> nil then
         if idxLst.Count > 0 then
           for i := 0 to idxLst.Count - 1 do
-            if (NewHash = PHashStreamListData(idxLst[i])^.qHash) and (PHashStreamListData(idxLst[i])^.LowerCaseName = lName) then
+            if (newhash = PHashStreamListData(idxLst[i])^.qHash) and (PHashStreamListData(idxLst[i])^.LowerCaseName = lName) then
                 Exit(True);
     end;
 end;
@@ -434,32 +435,32 @@ begin
       FAryList[i] := nil;
 end;
 
-function THashStreamList.GetItem(aName: SystemString): PHashStreamListData;
+function THashStreamList.GetItem(AName: SystemString): PHashStreamListData;
 var
-  NewHash: THash;
-  i      : Integer;
-  idxLst : TCoreClassList;
-  lName  : SystemString;
+  newhash: THash;
+  i: Integer;
+  idxLst: TCoreClassList;
+  lName: SystemString;
 begin
   Result := nil;
-  if umlGetLength(aName) > 0 then
+  if umlGetLength(AName) > 0 then
     begin
-      lName := LowerCase(aName);
-      NewHash := MakeHash(lName);
-      idxLst := GetListTable(NewHash, False);
+      lName := LowerCase(AName);
+      newhash := MakeHashS(@lName);
+      idxLst := GetListTable(newhash, False);
       if idxLst <> nil then
         if idxLst.Count > 0 then
           for i := 0 to idxLst.Count - 1 do
             begin
-              if (NewHash = PHashStreamListData(idxLst[i])^.qHash) and (PHashStreamListData(idxLst[i])^.LowerCaseName = lName) then
+              if (newhash = PHashStreamListData(idxLst[i])^.qHash) and (PHashStreamListData(idxLst[i])^.LowerCaseName = lName) then
                 begin
                   Result := idxLst[i];
-                  if Result^.Stream = nil then
-                      Result^.Stream := TItemStream.Create(FDBEngine, Result^.ItemHnd)
+                  if Result^.stream = nil then
+                      Result^.stream := TItemStream.Create(FDBEngine, Result^.ItemHnd)
                   else
-                      Result^.Stream.SeekStart;
+                      Result^.stream.SeekStart;
                   if FCounter then
-                      Inc(Result^.CallCount);
+                      inc(Result^.CallCount);
                   Exit;
                 end;
             end;

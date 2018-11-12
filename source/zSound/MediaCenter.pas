@@ -7,10 +7,12 @@
 { * https://github.com/PassByYou888/zTranslate                                 * }
 { * https://github.com/PassByYou888/zSound                                     * }
 { * https://github.com/PassByYou888/zAnalysis                                  * }
+{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/zRasterization                             * }
 { ****************************************************************************** }
 unit MediaCenter;
 
-{$I ..\zDefine.inc}
+{$INCLUDE ..\zDefine.inc}
 
 interface
 
@@ -26,7 +28,7 @@ uses Classes, Types,
 type
   PSearchConfigInfo = ^TSearchConfigInfo;
 
-  TSearchConfigInfo = packed record
+  TSearchConfigInfo = record
     Recursion: Boolean;
     Intf: TCoreClassObject;
     Info: SystemString;
@@ -37,22 +39,22 @@ type
   private
     FList: TCoreClassList;
 
-    function GetSearchItems(Index: Integer): PSearchConfigInfo;
-    procedure SetSearchItems(Index: Integer; const Value: PSearchConfigInfo);
+    function GetSearchItems(index: Integer): PSearchConfigInfo;
+    procedure SetSearchItems(index: Integer; const Value: PSearchConfigInfo);
 
-    function SearchObjData(aRootDir, aName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager; var hnd: TCoreClassStream): Boolean;
-    function SearchLib(LibName, ItmName: SystemString; Intf: TLibraryManager; var hnd: TCoreClassStream): Boolean;
-    function SearchStreamList(aName: SystemString; Intf: THashStreamList; var hnd: TCoreClassStream): Boolean;
+    function SearchObjData(aRootDir, AName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager; var Hnd: TCoreClassStream): Boolean;
+    function SearchLib(LibName, ItmName: SystemString; Intf: TLibraryManager; var Hnd: TCoreClassStream): Boolean;
+    function SearchStreamList(AName: SystemString; Intf: THashStreamList; var Hnd: TCoreClassStream): Boolean;
 
-    function ExistsObjData(aRootDir, aName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager): Boolean;
+    function ExistsObjData(aRootDir, AName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager): Boolean;
     function ExistsLib(LibName, ItmName: SystemString; Intf: TLibraryManager): Boolean;
-    function ExistsStreamList(aName: SystemString; Intf: THashStreamList): Boolean;
+    function ExistsStreamList(AName: SystemString; Intf: THashStreamList): Boolean;
   public
     constructor Create;
     destructor Destroy; override;
 
-    function FileIOStream(filename: SystemString; mode: Word): TCoreClassStream;
-    function FileIOStreamExists(filename: SystemString): Boolean;
+    function FileIOStream(FileName: SystemString; Mode: Word): TCoreClassStream;
+    function FileIOStreamExists(FileName: SystemString): Boolean;
 
     property SearchItems[index: Integer]: PSearchConfigInfo read GetSearchItems write SetSearchItems; default;
 
@@ -87,11 +89,11 @@ var
   // default sound engine
   Media: TzSound = nil;
 
-function FileIOCreate(const filename: SystemString): TCoreClassStream;
-function FileIOOpen(const filename: SystemString): TCoreClassStream;
-function FileIOExists(const filename: SystemString): Boolean;
+function FileIOCreate(const FileName: SystemString): TCoreClassStream;
+function FileIOOpen(const FileName: SystemString): TCoreClassStream;
+function FileIOExists(const FileName: SystemString): Boolean;
 
-function GetResourceStream(const filename: SystemString): TStream;
+function GetResourceStream(const FileName: SystemString): TStream;
 
 type
   TGlobalMediaType  = (gmtSound, gmtArt, gmtTile, gmtBrush, gmtUser);
@@ -116,56 +118,56 @@ uses IOUtils, SysUtils, Variants;
 {$ENDIF}
 
 
-function FileIOCreate(const filename: SystemString): TCoreClassStream;
+function FileIOCreate(const FileName: SystemString): TCoreClassStream;
 begin
   LockObject(FileIO);
-  Result := FileIO.FileIOStream(filename, fmCreate);
+  Result := FileIO.FileIOStream(FileName, fmCreate);
   UnLockObject(FileIO);
 end;
 
-function FileIOOpen(const filename: SystemString): TCoreClassStream;
+function FileIOOpen(const FileName: SystemString): TCoreClassStream;
 begin
   LockObject(FileIO);
-  Result := FileIO.FileIOStream(filename, fmOpenRead);
+  Result := FileIO.FileIOStream(FileName, fmOpenRead);
   UnLockObject(FileIO);
 end;
 
-function FileIOExists(const filename: SystemString): Boolean;
+function FileIOExists(const FileName: SystemString): Boolean;
 begin
   LockObject(FileIO);
-  Result := FileIO.FileIOStreamExists(filename);
+  Result := FileIO.FileIOStreamExists(FileName);
   UnLockObject(FileIO);
 end;
 
-function TFileIOHook.GetSearchItems(Index: Integer): PSearchConfigInfo;
+function TFileIOHook.GetSearchItems(index: Integer): PSearchConfigInfo;
 begin
   Result := FList[index];
 end;
 
-procedure TFileIOHook.SetSearchItems(Index: Integer; const Value: PSearchConfigInfo);
+procedure TFileIOHook.SetSearchItems(index: Integer; const Value: PSearchConfigInfo);
 begin
   FList[index] := Value;
 end;
 
-function TFileIOHook.SearchObjData(aRootDir, aName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager; var hnd: TCoreClassStream): Boolean;
+function TFileIOHook.SearchObjData(aRootDir, AName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager; var Hnd: TCoreClassStream): Boolean;
 var
-  ItemHnd        : TItemHandle;
-  ItmSearchHnd   : TItemSearch;
+  ItemHnd: TItemHandle;
+  ItmSearchHnd: TItemSearch;
   ItmRecursionHnd: TItemRecursionSearch;
 begin
-  hnd := nil;
+  Hnd := nil;
   Result := False;
   if Recursion then
     begin
-      if aIntf.RecursionSearchFirst(aRootDir, aName, ItmRecursionHnd) then
+      if aIntf.RecursionSearchFirst(aRootDir, AName, ItmRecursionHnd) then
         begin
           repeat
             case ItmRecursionHnd.ReturnHeader.ID of
-              db_Header_ItemID:
+              db_Header_Item_ID:
                 begin
                   if aIntf.ItemFastOpen(ItmRecursionHnd.ReturnHeader.CurrentHeader, ItemHnd) then
                     begin
-                      hnd := TItemStreamEngine.Create(aIntf, ItemHnd);
+                      Hnd := TItemStreamEngine.Create(aIntf, ItemHnd);
                       Result := True;
                       Exit;
                     end;
@@ -174,23 +176,23 @@ begin
           until not aIntf.RecursionSearchNext(ItmRecursionHnd);
         end;
     end
-  else if aIntf.ItemFindFirst(aRootDir, aName, ItmSearchHnd) then
+  else if aIntf.ItemFindFirst(aRootDir, AName, ItmSearchHnd) then
     begin
       if aIntf.ItemFastOpen(ItmSearchHnd.HeaderPOS, ItemHnd) then
         begin
-          hnd := TItemStreamEngine.Create(aIntf, ItemHnd);
+          Hnd := TItemStreamEngine.Create(aIntf, ItemHnd);
           Result := True;
           Exit;
         end;
     end;
 end;
 
-function TFileIOHook.SearchLib(LibName, ItmName: SystemString; Intf: TLibraryManager; var hnd: TCoreClassStream): Boolean;
+function TFileIOHook.SearchLib(LibName, ItmName: SystemString; Intf: TLibraryManager; var Hnd: TCoreClassStream): Boolean;
 var
   n: SystemString;
   p: PHashStreamListData;
 begin
-  hnd := nil;
+  Hnd := nil;
   Result := False;
   if LibName = '' then
       n := ItmName
@@ -199,38 +201,38 @@ begin
   p := Intf.PathItems[n];
   if p <> nil then
     begin
-      hnd := TItemStream.Create(Intf.DBEngine, p^.ItemHnd);
+      Hnd := TItemStream.Create(Intf.DBEngine, p^.ItemHnd);
       Result := True;
     end;
 end;
 
-function TFileIOHook.SearchStreamList(aName: SystemString; Intf: THashStreamList; var hnd: TCoreClassStream): Boolean;
+function TFileIOHook.SearchStreamList(AName: SystemString; Intf: THashStreamList; var Hnd: TCoreClassStream): Boolean;
 var
   p: PHashStreamListData;
 begin
-  hnd := nil;
+  Hnd := nil;
   Result := False;
-  p := Intf.Names[aName];
+  p := Intf.Names[AName];
   if p <> nil then
     begin
-      hnd := TItemStream.Create(Intf.DBEngine, p^.ItemHnd);
+      Hnd := TItemStream.Create(Intf.DBEngine, p^.ItemHnd);
       Result := True;
     end;
 end;
 
-function TFileIOHook.ExistsObjData(aRootDir, aName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager): Boolean;
+function TFileIOHook.ExistsObjData(aRootDir, AName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager): Boolean;
 var
-  ItmSearchHnd   : TItemSearch;
+  ItmSearchHnd: TItemSearch;
   ItmRecursionHnd: TItemRecursionSearch;
 begin
   Result := False;
   if Recursion then
     begin
-      if aIntf.RecursionSearchFirst(aRootDir, aName, ItmRecursionHnd) then
+      if aIntf.RecursionSearchFirst(aRootDir, AName, ItmRecursionHnd) then
         begin
           repeat
             case ItmRecursionHnd.ReturnHeader.ID of
-              db_Header_ItemID:
+              db_Header_Item_ID:
                 begin
                   Result := True;
                   Exit;
@@ -240,7 +242,7 @@ begin
         end;
     end
   else
-      Result := aIntf.ItemFindFirst(aRootDir, aName, ItmSearchHnd);
+      Result := aIntf.ItemFindFirst(aRootDir, AName, ItmSearchHnd);
 end;
 
 function TFileIOHook.ExistsLib(LibName, ItmName: SystemString; Intf: TLibraryManager): Boolean;
@@ -254,9 +256,9 @@ begin
   Result := Intf.PathItems[n] <> nil;
 end;
 
-function TFileIOHook.ExistsStreamList(aName: SystemString; Intf: THashStreamList): Boolean;
+function TFileIOHook.ExistsStreamList(AName: SystemString; Intf: THashStreamList): Boolean;
 begin
-  Result := Intf.Names[aName] <> nil;
+  Result := Intf.Names[AName] <> nil;
 end;
 
 constructor TFileIOHook.Create;
@@ -274,26 +276,26 @@ begin
   inherited Destroy;
 end;
 
-function TFileIOHook.FileIOStream(filename: SystemString; mode: Word): TCoreClassStream;
+function TFileIOHook.FileIOStream(FileName: SystemString; Mode: Word): TCoreClassStream;
 var
   i: Integer;
   p: PSearchConfigInfo;
   n: SystemString;
 begin
-  filename := umlTrimSpace(filename);
-  if filename = '' then
+  FileName := umlTrimSpace(FileName);
+  if FileName = '' then
     begin
       Result := nil;
       Exit;
     end;
 
-  if (mode = fmCreate) then
+  if (Mode = fmCreate) then
     begin
-      Result := TCoreClassFileStream.Create(filename, fmCreate);
+      Result := TCoreClassFileStream.Create(FileName, fmCreate);
       Exit;
     end;
 
-  n := umlGetFileName(filename);
+  n := umlGetFileName(FileName);
   Result := nil;
 
   if (FList.Count > 0) then
@@ -355,15 +357,15 @@ begin
         end;
     end;
 
-  if umlFileExists(filename) then
+  if umlFileExists(FileName) then
     begin
-      Result := TCoreClassFileStream.Create(filename, fmOpenRead or fmShareDenyWrite);
+      Result := TCoreClassFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
       Exit;
     end;
 
-  {$IFDEF FPC}
-  {$ELSE}
-  n := umlGetFileName(filename);
+{$IFDEF FPC}
+{$ELSE}
+  n := umlGetFileName(FileName);
   n := umlCombineFileName(TPath.GetLibraryPath, n);
   if umlFileExists(n) then
     begin
@@ -371,7 +373,7 @@ begin
       Exit;
     end;
 
-  n := umlGetFileName(filename);
+  n := umlGetFileName(FileName);
   n := umlCombineFileName(TPath.GetDocumentsPath, n);
   if umlFileExists(n) then
     begin
@@ -379,7 +381,7 @@ begin
       Exit;
     end;
 
-  n := umlGetFileName(filename);
+  n := umlGetFileName(FileName);
   n := umlCombineFileName(TPath.GetDownloadsPath, n);
   if umlFileExists(n) then
     begin
@@ -387,31 +389,31 @@ begin
       Exit;
     end;
 
-  n := umlGetFileName(filename);
+  n := umlGetFileName(FileName);
   n := umlCombineFileName(TPath.GetSharedDownloadsPath, n);
   if umlFileExists(n) then
     begin
       Result := TCoreClassFileStream.Create(n, fmOpenRead or fmShareDenyWrite);
       Exit;
     end;
-  {$ENDIF}
+{$ENDIF}
   Result := nil;
 end;
 
-function TFileIOHook.FileIOStreamExists(filename: SystemString): Boolean;
+function TFileIOHook.FileIOStreamExists(FileName: SystemString): Boolean;
 var
   i: Integer;
   p: PSearchConfigInfo;
   n: SystemString;
 begin
-  filename := umlTrimSpace(filename);
-  if filename = '' then
+  FileName := umlTrimSpace(FileName);
+  if FileName = '' then
     begin
       Result := False;
       Exit;
     end;
 
-  n := umlGetFileName(filename);
+  n := umlGetFileName(FileName);
   Result := False;
   try
     if FList.Count > 0 then
@@ -445,15 +447,15 @@ begin
           end;
       end;
 
-    if umlFileExists(filename) then
+    if umlFileExists(FileName) then
       begin
         Result := True;
         Exit;
       end;
 
-    {$IFDEF FPC}
-    {$ELSE}
-    n := umlGetFileName(filename);
+{$IFDEF FPC}
+{$ELSE}
+    n := umlGetFileName(FileName);
     n := umlCombineFileName(TPath.GetLibraryPath, n);
     if umlFileExists(n) then
       begin
@@ -461,7 +463,7 @@ begin
         Exit;
       end;
 
-    n := umlGetFileName(filename);
+    n := umlGetFileName(FileName);
     n := umlCombineFileName(TPath.GetDocumentsPath, n);
     if umlFileExists(n) then
       begin
@@ -469,7 +471,7 @@ begin
         Exit;
       end;
 
-    n := umlGetFileName(filename);
+    n := umlGetFileName(FileName);
     n := umlCombineFileName(TPath.GetDownloadsPath, n);
     if umlFileExists(n) then
       begin
@@ -477,14 +479,14 @@ begin
         Exit;
       end;
 
-    n := umlGetFileName(filename);
+    n := umlGetFileName(FileName);
     n := umlCombineFileName(TPath.GetSharedDownloadsPath, n);
     if umlFileExists(n) then
       begin
         Result := True;
         Exit;
       end;
-    {$ENDIF}
+{$ENDIF}
   except
   end;
 end;
@@ -504,7 +506,7 @@ procedure TFileIOHook.AddPrioritySearchObj(Recursion: Boolean; Intf: TCoreClassO
 var
   p: PSearchConfigInfo;
 begin
-  New(p);
+  new(p);
   p^.Recursion := Recursion;
   p^.Intf := Intf;
   p^.Info := Info;
@@ -523,7 +525,7 @@ procedure TFileIOHook.AddSearchObj(Recursion: Boolean; Intf: TCoreClassObject; I
 var
   p: PSearchConfigInfo;
 begin
-  New(p);
+  new(p);
   p^.Recursion := Recursion;
   p^.Intf := Intf;
   p^.Info := Info;
@@ -554,7 +556,7 @@ begin
           Break;
         end
       else
-          Inc(i);
+          inc(i);
     end;
 end;
 
@@ -592,7 +594,7 @@ begin
               FList.Move(i, 0);
           Result := True;
         end;
-      Inc(i);
+      inc(i);
     end;
   if not Result then
       AddPrioritySearchObj(Recursion, Intf, Info);
@@ -617,7 +619,7 @@ begin
           p^.Alias[SourFileName] := DestFileName;
           Result := True;
         end;
-      Inc(i);
+      inc(i);
     end;
 end;
 
@@ -640,14 +642,14 @@ begin
           p^.Alias.CopyFrom(Alias);
           Result := True;
         end;
-      Inc(i);
+      inc(i);
     end;
 end;
 
 function TFileIOHook.SetSearchObjAliasFromStream(Intf: TCoreClassObject; Alias: TCoreClassStream): Boolean;
 var
-  i : Integer;
-  p : PSearchConfigInfo;
+  i: Integer;
+  p: PSearchConfigInfo;
   ts: THashVariantTextStream;
 begin
   Result := False;
@@ -666,28 +668,28 @@ begin
           DisposeObject(ts);
           Result := True;
         end;
-      Inc(i);
+      inc(i);
     end;
 end;
 
-function GetResourceStream(const filename: SystemString): TStream;
+function GetResourceStream(const FileName: SystemString): TStream;
 var
   n: SystemString;
 begin
   Result := nil;
 
-  if TPascalString(filename).Exists('.') then
-      n := umlDeleteLastStr(filename, '.');
+  if TPascalString(FileName).Exists('.') then
+      n := umlDeleteLastStr(FileName, '.');
 
-  {$IFDEF FPC}
-  if FindResource(hInstance, n, RT_RCDATA) = 0 then
-  {$ELSE}
-  if FindResource(hInstance, PChar(n), RT_RCDATA) = 0 then
-    {$ENDIF}
+{$IFDEF FPC}
+  if FindResource(HInstance, n, RT_RCDATA) = 0 then
+{$ELSE}
+  if FindResource(HInstance, PChar(n), RT_RCDATA) = 0 then
+{$ENDIF}
     begin
-      {$IFDEF FPC}
-      {$ELSE}
-      n := umlGetFileName(filename);
+{$IFDEF FPC}
+{$ELSE}
+      n := umlGetFileName(FileName);
       n := umlCombineFileName(TPath.GetLibraryPath, n);
       if umlFileExists(n) then
         begin
@@ -695,7 +697,7 @@ begin
           Exit;
         end;
 
-      n := umlGetFileName(filename);
+      n := umlGetFileName(FileName);
       n := umlCombineFileName(TPath.GetDocumentsPath, n);
       if umlFileExists(n) then
         begin
@@ -703,7 +705,7 @@ begin
           Exit;
         end;
 
-      n := umlGetFileName(filename);
+      n := umlGetFileName(FileName);
       n := umlCombineFileName(TPath.GetDownloadsPath, n);
       if umlFileExists(n) then
         begin
@@ -711,15 +713,15 @@ begin
           Exit;
         end;
 
-      n := umlGetFileName(filename);
+      n := umlGetFileName(FileName);
       n := umlCombineFileName(TPath.GetSharedDownloadsPath, n);
       if umlFileExists(n) then
         begin
           Result := TCoreClassFileStream.Create(n, fmOpenRead or fmShareDenyWrite);
           Exit;
         end;
-      {$ENDIF}
-      n := umlGetFileName(filename);
+{$ENDIF}
+      n := umlGetFileName(FileName);
       if FileIOExists(n) then
         begin
           Result := FileIOOpen(n);
@@ -730,7 +732,7 @@ begin
     end
   else
     begin
-      Result := TResourceStream.Create(hInstance, n, RT_RCDATA);
+      Result := TResourceStream.Create(HInstance, n, RT_RCDATA);
     end;
 end;
 
@@ -775,11 +777,11 @@ begin
       FileIO.AddSearchObj(True, UserLibrary, '/');
     end;
 
-  {$IFDEF FPC}
+{$IFDEF FPC}
   Media := DefaultSoundEngineClass.Create(umlCurrentPath);
-  {$ELSE}
+{$ELSE}
   Media := DefaultSoundEngineClass.Create(TPath.GetTempPath);
-  {$ENDIF}
+{$ENDIF}
   Media.SearchDB := SoundLibrary;
 
 end;

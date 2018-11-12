@@ -6,6 +6,8 @@
 { * https://github.com/PassByYou888/zTranslate                                 * }
 { * https://github.com/PassByYou888/zSound                                     * }
 { * https://github.com/PassByYou888/zAnalysis                                  * }
+{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/zRasterization                             * }
 { ****************************************************************************** }
 
 (*
@@ -15,26 +17,26 @@
 
 unit MH;
 
-{$I zDefine.inc}
+{$INCLUDE zDefine.inc}
 
 interface
 
-uses ListEngine;
+uses CoreClasses, SyncObjs, ListEngine;
 
 procedure BeginMemoryHook_1;
 procedure EndMemoryHook_1;
-function GetHookMemorySize_1: NativeUInt;
-function GetHookPtrList_1: TPointerHashNativeUIntList; inline;
+function GetHookMemorySize_1: nativeUInt;
+function GetHookPtrList_1: TPointerHashNativeUIntList;
 
 procedure BeginMemoryHook_2;
 procedure EndMemoryHook_2;
-function GetHookMemorySize_2: NativeUInt;
-function GetHookPtrList_2: TPointerHashNativeUIntList; inline;
+function GetHookMemorySize_2: nativeUInt;
+function GetHookPtrList_2: TPointerHashNativeUIntList;
 
 procedure BeginMemoryHook_3;
 procedure EndMemoryHook_3;
-function GetHookMemorySize_3: NativeUInt;
-function GetHookPtrList_3: TPointerHashNativeUIntList; inline;
+function GetHookMemorySize_3: nativeUInt;
+function GetHookPtrList_3: TPointerHashNativeUIntList;
 
 type
   TMemoryHookedState = array [0 .. 3] of Boolean;
@@ -44,7 +46,7 @@ const
   cDisable_MemoryHookedState: TMemoryHookedState = (False, False, False, False);
 
 function GetMHState: TMemoryHookedState;
-procedure SetMHState(const m: TMemoryHookedState);
+procedure SetMHState(const M: TMemoryHookedState);
 
 implementation
 
@@ -60,7 +62,7 @@ begin
   MH_1.EndMemoryHook;
 end;
 
-function GetHookMemorySize_1: NativeUInt;
+function GetHookMemorySize_1: nativeUInt;
 begin
   Result := MH_1.GetHookMemorySize;
 end;
@@ -80,7 +82,7 @@ begin
   MH_2.EndMemoryHook;
 end;
 
-function GetHookMemorySize_2: NativeUInt;
+function GetHookMemorySize_2: nativeUInt;
 begin
   Result := MH_2.GetHookMemorySize;
 end;
@@ -100,7 +102,7 @@ begin
   MH_3.EndMemoryHook;
 end;
 
-function GetHookMemorySize_3: NativeUInt;
+function GetHookMemorySize_3: nativeUInt;
 begin
   Result := MH_3.GetHookMemorySize;
 end;
@@ -118,32 +120,36 @@ begin
   Result[3] := MH_3.MemoryHooked;
 end;
 
-procedure SetMHState(const m: TMemoryHookedState);
+procedure SetMHState(const M: TMemoryHookedState);
 begin
-  MH_ZDB.MemoryHooked := m[0];
-  MH_1.MemoryHooked := m[1];
-  MH_2.MemoryHooked := m[2];
-  MH_3.MemoryHooked := m[3];
+  MH_ZDB.MemoryHooked := M[0];
+  MH_1.MemoryHooked := M[1];
+  MH_2.MemoryHooked := M[2];
+  MH_3.MemoryHooked := M[3];
 end;
 
 var
+  MHStatusCritical: TCriticalSection;
   OriginDoStatusHook: TDoStatusCall;
 
 procedure InternalDoStatus(Text: SystemString; const ID: Integer);
 var
   hs: TMemoryHookedState;
 begin
+  MHStatusCritical.Acquire;
   hs := GetMHState;
   SetMHState(cDisable_MemoryHookedState);
   try
       OriginDoStatusHook(Text, ID);
   finally
-      SetMHState(hs);
+    SetMHState(hs);
+    MHStatusCritical.Release;
   end;
 end;
 
 initialization
 
+MHStatusCritical := TCriticalSection.Create;
 OriginDoStatusHook := OnDoStatusHook;
 {$IFDEF FPC}
 OnDoStatusHook := @InternalDoStatus;
@@ -153,6 +159,7 @@ OnDoStatusHook := InternalDoStatus;
 
 finalization
 
+DisposeObject(MHStatusCritical);
 OnDoStatusHook := OriginDoStatusHook;
 
 end.

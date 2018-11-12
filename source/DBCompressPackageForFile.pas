@@ -7,6 +7,8 @@
 { * https://github.com/PassByYou888/zTranslate                                 * }
 { * https://github.com/PassByYou888/zSound                                     * }
 { * https://github.com/PassByYou888/zAnalysis                                  * }
+{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/zRasterization                             * }
 { ****************************************************************************** }
 (*
   update history
@@ -14,28 +16,27 @@
 
 unit DBCompressPackageForFile;
 
-{$I zDefine.inc}
+{$INCLUDE zDefine.inc}
 
 interface
 
-uses SysUtils,
-  ObjectData, ObjectDataManager, UnicodeMixedLib, CoreClasses, ItemStream,
+uses ObjectData, ObjectDataManager, UnicodeMixedLib, CoreClasses, ItemStream,
   DoStatusIO, ListEngine, TextDataEngine, PascalStrings;
 
 procedure BeginImportStreamToDB(dbEng: TObjectDataManager; md5List: THashStringList);
-procedure ImportStreamToDB(md5List: THashStringList; stream: TCoreClassStream; fileName: SystemString; dbEng: TObjectDataManager);
+procedure ImportStreamToDB(md5List: THashStringList; stream: TCoreClassStream; FileName: SystemString; dbEng: TObjectDataManager);
 procedure EndImportStreamToDB(dbEng: TObjectDataManager; md5List: THashStringList);
 
 procedure BatchImportPathToDB(InitDir, Filter: SystemString; dbEng: TObjectDataManager);
 procedure BatchImportPathToDBFile(InitDir, Filter, dbFile: SystemString);
 procedure BatchImportPathToDBStream(InitDir, Filter: SystemString; DBStream: TCoreClassStream);
 
-function ExtractFileInDB(dbEng: TObjectDataManager; FieldPos: Int64; fileName: SystemString; ExtractToStream: TCoreClassStream): Boolean; overload;
-function ExtractFileInDB(dbEng: TObjectDataManager; DBPath, fileName: SystemString; ExtractToStream: TCoreClassStream): Boolean; overload;
-function ExtractFileInDB(dbFileName, DBPath, fileName: SystemString; ExtractToStream: TCoreClassStream): Boolean; overload;
-function ExtractFileInDB(DBStream: TCoreClassStream; DBPath, fileName: SystemString; ExtractToStream: TCoreClassStream): Boolean; overload;
-function ExistsFileInDB(DBStream: TCoreClassStream; DBPath, fileName: SystemString): Boolean; overload;
-function ExistsFileInDB(dbFileName, DBPath, fileName: SystemString): Boolean; overload;
+function ExtractFileInDB(dbEng: TObjectDataManager; FieldPos: Int64; FileName: SystemString; ExtractToStream: TCoreClassStream): Boolean; overload;
+function ExtractFileInDB(dbEng: TObjectDataManager; DBPath, FileName: SystemString; ExtractToStream: TCoreClassStream): Boolean; overload;
+function ExtractFileInDB(dbFileName, DBPath, FileName: SystemString; ExtractToStream: TCoreClassStream): Boolean; overload;
+function ExtractFileInDB(DBStream: TCoreClassStream; DBPath, FileName: SystemString; ExtractToStream: TCoreClassStream): Boolean; overload;
+function ExistsFileInDB(DBStream: TCoreClassStream; DBPath, FileName: SystemString): Boolean; overload;
+function ExistsFileInDB(dbFileName, DBPath, FileName: SystemString): Boolean; overload;
 
 procedure ExtractDBToPath(dbEng: TObjectDataManager; ExtractToDir: SystemString; OutputFileList: TCoreClassStrings); overload;
 procedure ExtractDBToPath(dbEng: TObjectDataManager; ExtractToDir: SystemString); overload;
@@ -47,13 +48,13 @@ function VerifyFileInDBFile(dbFile: SystemString): Integer;
 
 var
   DBPackageMD5VerifyFileName: SystemString = '______md5info.txt';
-  DBPackageFileCompressed: Boolean         = True;
+  DBPackageFileCompressed: Boolean = True;
 
 implementation
 
 uses MemoryStream64;
 
-procedure PackStream(sour, GenPack: TCoreClassStream);
+procedure EncryptStream(sour, GenPack: TCoreClassStream);
 begin
   if DBPackageFileCompressed then
       MaxCompressStream(sour, GenPack)
@@ -61,7 +62,7 @@ begin
       GenPack.CopyFrom(sour, sour.Size);
 end;
 
-procedure UnPackStream(sour, UnPackTo: TCoreClassStream);
+procedure DecryptStream(sour, UnPackTo: TCoreClassStream);
 begin
   if DBPackageFileCompressed then
       DecompressStream(sour, UnPackTo)
@@ -91,7 +92,7 @@ begin
     end;
 end;
 
-procedure ImportStreamToDB(md5List: THashStringList; stream: TCoreClassStream; fileName: SystemString; dbEng: TObjectDataManager);
+procedure ImportStreamToDB(md5List: THashStringList; stream: TCoreClassStream; FileName: SystemString; dbEng: TObjectDataManager);
 var
   FieldPos: Int64;
   srHnd: TItemSearch;
@@ -101,11 +102,11 @@ var
 begin
   FieldPos := dbEng.RootField;
 
-  if md5List.Exists(fileName) then
-    if dbEng.ItemFastFindFirst(FieldPos, fileName, srHnd) then
+  if md5List.Exists(FileName) then
+    if dbEng.ItemFastFindFirst(FieldPos, FileName, srHnd) then
         dbEng.FastDelete(FieldPos, srHnd.HeaderPOS);
 
-  if dbEng.ItemFastCreate(FieldPos, fileName, '', itmHnd) then
+  if dbEng.ItemFastCreate(FieldPos, FileName, '', itmHnd) then
     begin
       try
         itmStream := TItemStream.Create(dbEng, itmHnd);
@@ -116,7 +117,7 @@ begin
 
         stream.Position := 0;
 
-        PackStream(stream, itmStream);
+        EncryptStream(stream, itmStream);
 
         DoStatus('%s %s ->  %s compressed:%d%%',
           [itmHnd.Name.Text,
@@ -156,9 +157,9 @@ end;
 
 procedure BatchImportPathToDB(InitDir, Filter: SystemString; dbEng: TObjectDataManager);
 
-  procedure AddPath(aPath: SystemString; aFieldPos: Int64);
+  procedure AddPath(APath: SystemString; aFieldPos: Int64);
   var
-    fAry: umlStringDynArray;
+    fAry: U_StringArray;
     n, suffixn: SystemString;
     fs: TCoreClassFileStream;
     itmHnd: TItemHandle;
@@ -184,7 +185,7 @@ procedure BatchImportPathToDB(InitDir, Filter: SystemString; dbEng: TObjectDataM
         dbEng.FastDelete(aFieldPos, srHnd.HeaderPOS);
       end;
 
-    fAry := umlGetFileListWithFullPath(aPath);
+    fAry := umlGetFileListWithFullPath(APath);
     for n in fAry do
       begin
         suffixn := umlGetFileName(n).Text;
@@ -205,7 +206,7 @@ procedure BatchImportPathToDB(InitDir, Filter: SystemString; dbEng: TObjectDataM
                   md5List.Add(itmHnd.Name, md5);
 
                   fs.Position := 0;
-                  PackStream(fs, itmStream);
+                  EncryptStream(fs, itmStream);
 
                   DoStatus('%s %s ->  %s compressed:%d%%',
                     [itmHnd.Name.Text,
@@ -238,7 +239,7 @@ procedure BatchImportPathToDB(InitDir, Filter: SystemString; dbEng: TObjectDataM
     DisposeObject(hashTextStream);
     DisposeObject(md5List);
 
-    fAry := umlGetDirListWithFullPath(aPath);
+    fAry := umlGetDirListWithFullPath(APath);
     for n in fAry do
       begin
         suffixn := umlGetLastStr(n, '/\').Text;
@@ -276,25 +277,25 @@ begin
   DBStream.Position := 0;
 end;
 
-function ExtractFileInDB(dbEng: TObjectDataManager; FieldPos: Int64; fileName: SystemString; ExtractToStream: TCoreClassStream): Boolean;
+function ExtractFileInDB(dbEng: TObjectDataManager; FieldPos: Int64; FileName: SystemString; ExtractToStream: TCoreClassStream): Boolean;
 var
   itmSrHnd: TItemSearch;
   itmHnd: TItemHandle;
   itmStream: TItemStream;
 begin
   Result := False;
-  if dbEng.ItemFastFindFirst(FieldPos, fileName, itmSrHnd) then
+  if dbEng.ItemFastFindFirst(FieldPos, FileName, itmSrHnd) then
     begin
       if dbEng.ItemFastOpen(itmSrHnd.HeaderPOS, itmHnd) then
         begin
           itmStream := TItemStream.Create(dbEng, itmHnd);
 
-          if SameText(itmHnd.Name, DBPackageMD5VerifyFileName) then
+          if itmHnd.Name.Same(DBPackageMD5VerifyFileName) then
               ExtractToStream.CopyFrom(itmStream, itmStream.Size)
           else
-              UnPackStream(itmStream, ExtractToStream);
+              DecryptStream(itmStream, ExtractToStream);
 
-          DoStatus('extract %s %s done!', [fileName, umlSizeToStr(ExtractToStream.Size).Text]);
+          DoStatus('extract %s %s done!', [FileName, umlSizeToStr(ExtractToStream.Size).Text]);
 
           DisposeObject(itmStream);
           Result := True;
@@ -302,60 +303,60 @@ begin
     end;
 end;
 
-function ExtractFileInDB(dbEng: TObjectDataManager; DBPath, fileName: SystemString; ExtractToStream: TCoreClassStream): Boolean;
+function ExtractFileInDB(dbEng: TObjectDataManager; DBPath, FileName: SystemString; ExtractToStream: TCoreClassStream): Boolean;
 var
   FieldPos: Int64;
 begin
   Result := dbEng.GetPathField(DBPath, FieldPos);
-  Result := Result and ExtractFileInDB(dbEng, FieldPos, fileName, ExtractToStream);
+  Result := Result and ExtractFileInDB(dbEng, FieldPos, FileName, ExtractToStream);
 end;
 
-function ExtractFileInDB(dbFileName, DBPath, fileName: SystemString; ExtractToStream: TCoreClassStream): Boolean;
+function ExtractFileInDB(dbFileName, DBPath, FileName: SystemString; ExtractToStream: TCoreClassStream): Boolean;
 var
   dbEng: TObjectDataManager;
 begin
   if not umlFileExists(dbFileName) then
-      exit(False);
+      Exit(False);
   dbEng := ObjectDataMarshal.Open(dbFileName, True);
 
-  Result := ExtractFileInDB(dbEng, DBPath, fileName, ExtractToStream);
+  Result := ExtractFileInDB(dbEng, DBPath, FileName, ExtractToStream);
 
   ObjectDataMarshal.CloseDB(dbEng);
 end;
 
-function ExtractFileInDB(DBStream: TCoreClassStream; DBPath, fileName: SystemString; ExtractToStream: TCoreClassStream): Boolean;
+function ExtractFileInDB(DBStream: TCoreClassStream; DBPath, FileName: SystemString; ExtractToStream: TCoreClassStream): Boolean;
 var
   dbEng: TObjectDataManager;
 begin
   DBStream.Position := 0;
   dbEng := TObjectDataManager.CreateAsStream(DBStream, '', ObjectDataMarshal.ID, True, False, False);
 
-  Result := ExtractFileInDB(dbEng, DBPath, fileName, ExtractToStream);
+  Result := ExtractFileInDB(dbEng, DBPath, FileName, ExtractToStream);
 
   DisposeObject(dbEng);
   DBStream.Position := 0;
 end;
 
-function ExistsFileInDB(DBStream: TCoreClassStream; DBPath, fileName: SystemString): Boolean;
+function ExistsFileInDB(DBStream: TCoreClassStream; DBPath, FileName: SystemString): Boolean;
 var
   dbEng: TObjectDataManager;
 begin
   dbEng := TObjectDataManager.CreateAsStream(DBStream, '', ObjectDataMarshal.ID, True, False, False);
 
-  Result := dbEng.ItemExists(DBPath, fileName);
+  Result := dbEng.ItemExists(DBPath, FileName);
 
   DisposeObject(dbEng);
 end;
 
-function ExistsFileInDB(dbFileName, DBPath, fileName: SystemString): Boolean;
+function ExistsFileInDB(dbFileName, DBPath, FileName: SystemString): Boolean;
 var
   dbEng: TObjectDataManager;
 begin
   if not umlFileExists(dbFileName) then
-      exit(False);
+      Exit(False);
   dbEng := ObjectDataMarshal.Open(dbFileName, True);
 
-  Result := dbEng.ItemExists(DBPath, fileName);
+  Result := dbEng.ItemExists(DBPath, FileName);
 
   ObjectDataMarshal.CloseDB(dbEng);
 end;
@@ -377,14 +378,14 @@ procedure ExtractDBToPath(dbEng: TObjectDataManager; ExtractToDir: SystemString;
       begin
         repeat
           try
-            if not SameText(itmSrHnd.Name, DBPackageMD5VerifyFileName) then
+            if not itmSrHnd.Name.Same(DBPackageMD5VerifyFileName) then
               if dbEng.ItemFastOpen(itmSrHnd.HeaderPOS, itmHnd) then
                 begin
                   fn := umlCombineFileName(ToDir, itmSrHnd.Name).Text;
                   fs := TCoreClassFileStream.Create(fn, fmCreate);
                   itmStream := TItemStream.Create(dbEng, itmHnd);
 
-                  UnPackStream(itmStream, fs);
+                  DecryptStream(itmStream, fs);
                   DoStatus('extract %s %s ok!', [fn, umlSizeToStr(fs.Size).Text]);
 
                   DisposeObject(fs);
@@ -420,7 +421,7 @@ var
   dbEng: TObjectDataManager;
 begin
   if not umlFileExists(dbFile) then
-      exit;
+      Exit;
   dbEng := ObjectDataMarshal.Open(dbFile, True);
   ExtractDBToPath(dbEng, ExtractToDir);
   ObjectDataMarshal.CloseDB(dbEng);
@@ -439,7 +440,7 @@ var
     itmStream: TItemStream;
     ms: TMemoryStream64;
 
-    md5: SystemString;
+    md5: TPascalString;
     md5List: THashStringList;
     hashTextStream: THashStringTextStream;
   begin
@@ -461,23 +462,23 @@ var
       begin
         repeat
           try
-            if not SameText(itmSrHnd.Name, DBPackageMD5VerifyFileName) then
+            if not itmSrHnd.Name.Same(DBPackageMD5VerifyFileName) then
               if dbEng.ItemFastOpen(itmSrHnd.HeaderPOS, itmHnd) then
                 begin
                   itmStream := TItemStream.Create(dbEng, itmHnd);
 
                   ms := TMemoryStream64.Create;
-                  UnPackStream(itmStream, ms);
+                  DecryptStream(itmStream, ms);
                   ms.Position := 0;
-                  md5 := umlStreamMD5Char(ms).Text;
-                  if not SameText(md5List[itmHnd.Name], md5) then
+                  md5 := umlStreamMD5String(ms);
+                  if not md5.Same(md5List[itmHnd.Name]) then
                     begin
                       DoStatus('%s verify failed!', [itmHnd.Name.Text]);
-                      Inc(MD5Failed);
+                      inc(MD5Failed);
                     end
                   else
                     begin
-                      Inc(MD5Success);
+                      inc(MD5Success);
                     end;
                   DisposeObject(ms);
 
@@ -529,7 +530,7 @@ var
 begin
   Result := -1;
   if not umlFileExists(dbFile) then
-      exit;
+      Exit;
   dbEng := ObjectDataMarshal.Open(dbFile, True);
   Result := VerifyFileInDB(dbEng);
   ObjectDataMarshal.CloseDB(dbEng);

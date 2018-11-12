@@ -7,10 +7,12 @@
 { * https://github.com/PassByYou888/zTranslate                                 * }
 { * https://github.com/PassByYou888/zSound                                     * }
 { * https://github.com/PassByYou888/zAnalysis                                  * }
+{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/zRasterization                             * }
 { ****************************************************************************** }
 unit zSound_Bass;
 
-{$I ..\..\zDefine.inc}
+{$INCLUDE ..\zDefine.inc}
 
 interface
 
@@ -29,7 +31,7 @@ type
     Owner  : TSoundEngine_Bass;
     Name   : SystemString;
     Handle : Cardinal;
-    style  : TSoundStyle;
+    Style  : TSoundStyle;
     channel: Cardinal;
 
     constructor Create;
@@ -73,16 +75,16 @@ implementation
 constructor TSound.Create;
 begin
   Owner := nil;
-  name := '';
+  Name := '';
   Handle := 0;
-  style := ssUnknow;
+  Style := ssUnknow;
   channel := 0;
   inherited Create;
 end;
 
 destructor TSound.Destroy;
 begin
-  case style of
+  case Style of
     ssMusic: BASS_MusicFree(Handle);
     ssAmbient: BASS_MusicFree(Handle);
     ssSound: BASS_SampleFree(Handle);
@@ -97,11 +99,11 @@ var
   ms    : TMemoryStream64;
 begin
   if SoundList.Exists(FileName) then
-      exit;
+      Exit;
 
   stream := FileIOOpen(FileName);
   if stream = nil then
-      exit;
+      Exit;
 
   ms := TMemoryStream64.Create;
   ms.CopyFrom(stream, stream.Size);
@@ -111,17 +113,17 @@ begin
   s.Owner := Self;
   s.Name := FileName;
   s.Handle := BASS_SampleLoad(True, ms.Memory, 0, ms.Size, 3, BASS_SAMPLE_LOOP or BASS_SAMPLE_OVER_POS {$IFDEF UNICODE} or BASS_UNICODE{$ENDIF});
-  s.style := ssMusic;
+  s.Style := ssMusic;
   s.channel := 0;
 
-  disposeObject([ms, stream]);
+  DisposeObject([ms, stream]);
 
   if s.Handle <> 0 then
     begin
       SoundList[FileName] := s;
-      exit;
+      Exit;
     end;
-  disposeObject(s);
+  DisposeObject(s);
 end;
 
 procedure TSoundEngine_Bass.DoPlayMusic(FileName: SystemString);
@@ -138,11 +140,11 @@ begin
     end;
 
   if s = nil then
-      exit;
+      Exit;
 
-  s.channel := BASS_SampleGetChannel(s.Handle, false);
+  s.channel := BASS_SampleGetChannel(s.Handle, False);
   if s.channel <> 0 then
-      BASS_ChannelPlay(s.channel, false);
+      BASS_ChannelPlay(s.channel, False);
 end;
 
 procedure TSoundEngine_Bass.DoStopMusic;
@@ -157,11 +159,11 @@ begin
     begin
       s := lst[i] as TSound;
 
-      if s.style = ssMusic then
+      if s.Style = ssMusic then
         if s.channel <> 0 then
             BASS_ChannelStop(s.channel);
     end;
-  disposeObject(lst);
+  DisposeObject(lst);
 end;
 
 procedure TSoundEngine_Bass.DoPrepareAmbient(FileName: SystemString);
@@ -171,11 +173,11 @@ var
   ms    : TMemoryStream64;
 begin
   if SoundList.Exists(FileName) then
-      exit;
+      Exit;
 
   stream := FileIOOpen(FileName);
   if stream = nil then
-      exit;
+      Exit;
 
   ms := TMemoryStream64.Create;
   ms.CopyFrom(stream, stream.Size);
@@ -185,17 +187,17 @@ begin
   s.Owner := Self;
   s.Name := FileName;
   s.Handle := BASS_SampleLoad(True, ms.Memory, 0, ms.Size, 5, BASS_SAMPLE_LOOP or BASS_SAMPLE_OVER_POS {$IFDEF UNICODE} or BASS_UNICODE{$ENDIF});
-  s.style := ssAmbient;
+  s.Style := ssAmbient;
   s.channel := 0;
 
-  disposeObject([ms, stream]);
+  DisposeObject([ms, stream]);
 
   if s.Handle <> 0 then
     begin
       SoundList[FileName] := s;
-      exit;
+      Exit;
     end;
-  disposeObject(s);
+  DisposeObject(s);
 end;
 
 procedure TSoundEngine_Bass.DoPlayAmbient(FileName: SystemString);
@@ -203,7 +205,7 @@ var
   s: TSound;
 begin
   if DoIsPlaying(FileName) then
-      exit;
+      Exit;
 
   s := SoundList[FileName] as TSound;
   if s = nil then
@@ -213,11 +215,11 @@ begin
     end;
 
   if s = nil then
-      exit;
+      Exit;
 
-  s.channel := BASS_SampleGetChannel(s.Handle, false);
+  s.channel := BASS_SampleGetChannel(s.Handle, False);
   if s.channel <> 0 then
-      BASS_ChannelPlay(s.channel, false);
+      BASS_ChannelPlay(s.channel, False);
 end;
 
 procedure TSoundEngine_Bass.DoStopAmbient;
@@ -232,11 +234,11 @@ begin
     begin
       s := lst[i] as TSound;
 
-      if s.style = ssAmbient then
+      if s.Style = ssAmbient then
         if s.channel <> 0 then
             BASS_ChannelStop(s.channel);
     end;
-  disposeObject(lst);
+  DisposeObject(lst);
 end;
 
 procedure TSoundEngine_Bass.DoPrepareSound(FileName: SystemString);
@@ -246,11 +248,11 @@ var
   ms    : TMemoryStream64;
 begin
   if SoundList.Exists(FileName) then
-      exit;
+      Exit;
 
   stream := FileIOOpen(FileName);
   if stream = nil then
-      exit;
+      Exit;
 
   ms := TMemoryStream64.Create;
   ms.CopyFrom(stream, stream.Size);
@@ -260,19 +262,19 @@ begin
   s.Owner := Self;
   s.Name := FileName;
   s.Handle := BASS_SampleLoad(True, ms.Memory, 0, ms.Size, 3, BASS_SAMPLE_OVER_POS {$IFDEF UNICODE} or BASS_UNICODE{$ENDIF});
-  s.style := ssSound;
+  s.Style := ssSound;
   s.channel := 0;
 
-  disposeObject([ms, stream]);
+  DisposeObject([ms, stream]);
 
   if s.Handle <> 0 then
     begin
       SoundList[FileName] := s;
-      exit;
+      Exit;
     end
   else
       RaiseInfo('bass error:%d', [BASS_ErrorGetCode]);
-  disposeObject(s);
+  DisposeObject(s);
 end;
 
 procedure TSoundEngine_Bass.DoPlaySound(FileName: SystemString);
@@ -287,7 +289,7 @@ begin
     end;
 
   if s = nil then
-      exit;
+      Exit;
 
   if (s.channel <> 0) and (BASS_ChannelIsActive(s.channel) = BASS_ACTIVE_PLAYING) then
     begin
@@ -295,9 +297,9 @@ begin
     end
   else
     begin
-      s.channel := BASS_SampleGetChannel(s.Handle, false);
+      s.channel := BASS_SampleGetChannel(s.Handle, False);
       if s.channel <> 0 then
-          BASS_ChannelPlay(s.channel, false);
+          BASS_ChannelPlay(s.channel, False);
     end;
 end;
 
@@ -313,7 +315,7 @@ begin
     end;
 
   if s = nil then
-      exit;
+      Exit;
 
   if s.channel <> 0 then
       BASS_ChannelStop(s.channel);
@@ -333,14 +335,14 @@ begin
       if s.channel <> 0 then
           BASS_ChannelStop(s.channel);
     end;
-  disposeObject(lst);
+  DisposeObject(lst);
 end;
 
 function TSoundEngine_Bass.DoIsPlaying(FileName: SystemString): Boolean;
 var
   s: TSound;
 begin
-  Result := false;
+  Result := False;
 
   s := SoundList[FileName] as TSound;
   if s = nil then
@@ -350,7 +352,7 @@ begin
     end;
 
   if s = nil then
-      exit;
+      Exit;
 
   Result := (s.channel <> 0) and (BASS_ChannelIsActive(s.channel) = BASS_ACTIVE_PLAYING);
 end;
@@ -368,7 +370,7 @@ end;
 constructor TSoundEngine_Bass.Create(ATempPath: SystemString);
 begin
   inherited Create(ATempPath);
-  SoundList := THashObjectList.Create(True, 2048);
+  SoundList := THashObjectList.CustomCreate(True, 2048);
   SoundEngine_Bass := Self;
 end;
 
@@ -376,7 +378,7 @@ destructor TSoundEngine_Bass.Destroy;
 begin
   StopAll;
   SoundEngine_Bass := nil;
-  disposeObject(SoundList);
+  DisposeObject(SoundList);
   inherited Destroy;
 end;
 
@@ -387,8 +389,8 @@ end;
 
 initialization
 
-if not BASS_Available then
-    exit;
+if not Bass_Available then
+    Exit;
 try
   {$IFDEF MSWINDOWS}
   if not BASS_Init(-1, 44100, 0, 0, nil) then
@@ -408,4 +410,10 @@ end;
 
 finalization
 
-end.
+if Bass_Available then
+  Bass_Free;
+
+end. 
+ 
+ 
+ 

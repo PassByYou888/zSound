@@ -9,7 +9,7 @@
 { ****************************************************************************** }
 unit zSound_FMX;
 
-{$I ..\..\zDefine.inc}
+{$INCLUDE ..\zDefine.inc}
 
 interface
 
@@ -20,14 +20,14 @@ uses CoreClasses, zSound, UnicodeMixedLib, MediaCenter,
 
   System.SysUtils, System.Types, System.UITypes, System.Classes, FMX.Dialogs, FMX.Forms
   {$IFDEF ANDROID}
-    , androidapi.jni.Media, FMX.Helpers.Android, androidapi.jni.JavaTypes, androidapi.jni.GraphicsContentViewText, androidapi.JNIBridge,
-  androidapi.Helpers, System.Threading
+    , AndroidApi.JNI.Media, FMX.Helpers.Android, AndroidApi.JNI.JavaTypes, AndroidApi.JNI.GraphicsContentViewText, AndroidApi.JNIBridge,
+  AndroidApi.Helpers, System.Threading
   {$ENDIF}
   {$IFDEF IOS}
-    , MacApi.CoreFoundation, FMX.Platform.iOS, iOSapi.CocoaTypes, iOSapi.AVFoundation, iOSapi.Foundation
+    , Macapi.CoreFoundation, FMX.Platform.iOS, iOSApi.CocoaTypes, iOSApi.AVFoundation, iOSApi.Foundation
   {$ELSE}
   {$IFDEF MACOS}
-    , MacApi.CoreFoundation, FMX.Platform.Mac, MacApi.CocoaTypes, MacApi.AppKit, MacApi.Foundation, MacApi.Helpers
+    , Macapi.CoreFoundation, FMX.Platform.Mac, Macapi.CocoaTypes, Macapi.AppKit, Macapi.Foundation, Macapi.Helpers
   {$ENDIF}
   {$ENDIF}
   {$IFDEF MSWINDOWS}
@@ -36,11 +36,11 @@ uses CoreClasses, zSound, UnicodeMixedLib, MediaCenter,
     ;
 
 type
-  TSoundRec = packed record
+  TSoundRec = record
     SFilename: SystemString;
     SName: SystemString;
     SNameExt: SystemString;
-    SID: integer;
+    SID: Integer;
   end;
 
   PSoundRec = ^TSoundRec;
@@ -54,23 +54,23 @@ type
     fAudioMgr : JAudioManager;
     fSoundPool: JSoundPool;
     {$ENDIF}
-    function GetSoundsCount: integer;
-    function GetSoundFromIndex(Aindex: integer): PSoundRec;
+    function GetSoundsCount: Integer;
+    function GetSoundFromIndex(aIndex: Integer): PSoundRec;
   public
     constructor Create;
     destructor Destroy; override;
 
-    function AddSound(ASoundFile: SystemString): integer;
-    procedure DeleteSound(Aindex: integer); overload;
-    procedure PlaySound(Aindex: integer); overload;
+    function AddSound(ASoundFile: SystemString): Integer;
+    procedure DeleteSound(aIndex: Integer); overload;
+    procedure PlaySound(aIndex: Integer); overload;
 
-    procedure DeleteSound(AFile: SystemString); overload;
-    procedure PlaySound(AFile: SystemString); overload;
+    procedure DeleteSound(aFile: SystemString); overload;
+    procedure PlaySound(aFile: SystemString); overload;
 
-    function Exists(AFile: SystemString): Boolean;
+    function Exists(aFile: SystemString): Boolean;
 
-    property SoundsCount: integer read GetSoundsCount;
-    property Sounds[Aindex: integer]: PSoundRec read GetSoundFromIndex;
+    property SoundsCount: Integer read GetSoundsCount;
+    property Sounds[aIndex: Integer]: PSoundRec read GetSoundFromIndex;
   end;
 
   TSEBase = class
@@ -82,7 +82,7 @@ type
     procedure SetFileName(const Value: SystemString); virtual; abstract;
   public
     procedure Play; virtual; abstract;
-    procedure Stop; virtual; abstract;
+    procedure stop; virtual; abstract;
 
     function Playing: Boolean; virtual; abstract;
 
@@ -102,7 +102,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Play; override;
-    procedure Stop; override;
+    procedure stop; override;
 
     function Playing: Boolean; override;
   end;
@@ -132,7 +132,7 @@ type
     function SaveSoundAsLocalFile(FileName: SystemString): SystemString; override;
     function SoundReadyOk(FileName: SystemString): Boolean; override;
 
-    function MediaIsPlaying(m: TSEBase): Boolean;
+    function MediaIsPlaying(M: TSEBase): Boolean;
   public
     constructor Create(ATempPath: SystemString); override;
     destructor Destroy; override;
@@ -154,11 +154,11 @@ var
 const
   _libAudioToolbox = '/System/Library/Frameworks/AudioToolbox.framework/AudioToolbox';
 
-procedure AudioServicesPlaySystemSound(inSystemSoundID: nsinteger); cdecl; external _libAudioToolbox name 'AudioServicesPlaySystemSound';
-procedure AudioServicesCreateSystemSoundID(inFileURL: CFURLRef; var SystemSoundID: pnsinteger); cdecl; external _libAudioToolbox name 'AudioServicesCreateSystemSoundID';
-procedure AudioServicesDisposeSystemSoundID(inSystemSoundID: nsinteger); cdecl; external _libAudioToolbox name 'AudioServicesDisposeSystemSoundID';
+procedure AudioServicesPlaySystemSound(inSystemSoundID: nsinteger); cdecl; external _libAudioToolbox Name 'AudioServicesPlaySystemSound';
+procedure AudioServicesCreateSystemSoundID(inFileURL: CFURLRef; var SystemSoundID: pnsinteger); cdecl; external _libAudioToolbox Name 'AudioServicesCreateSystemSoundID';
+procedure AudioServicesDisposeSystemSoundID(inSystemSoundID: nsinteger); cdecl; external _libAudioToolbox Name 'AudioServicesDisposeSystemSoundID';
 procedure AudioServicesAddSystemSoundCompletion(inSystemSoundID: nsinteger; inRunLoop: CFRunLoopRef; inRunLoopMode: CFStringRef; inCompletionRoutine: Pointer; inClientData: CFURLRef); cdecl;
-  external _libAudioToolbox name 'AudioServicesAddSystemSoundCompletion';
+  external _libAudioToolbox Name 'AudioServicesAddSystemSoundCompletion';
 {$ENDIF}
 
 { TAudioManager }
@@ -166,7 +166,7 @@ procedure AudioServicesAddSystemSoundCompletion(inSystemSoundID: nsinteger; inRu
 {$IF Defined(IOS) OR Defined(MACOS)}
 
 
-procedure oncompleteionIosProc(SystemSndID: nsinteger; var AData: Pointer);
+procedure oncompleteionIosProc(SystemSndID: nsinteger; var aData: Pointer);
 begin
   // place here the code to run when a sound finish playing
 end;
@@ -181,17 +181,17 @@ begin
 
     {$IFDEF ANDROID}
     fAudioMgr := TJAudioManager.Wrap((SharedActivity.getSystemService(TJContext.JavaClass.AUDIO_SERVICE) as ILocalObject).GetObjectID);
-    fSoundPool := TJSoundPool.JavaClass.init(4, TJAudioManager.JavaClass.STREAM_MUSIC, 0);
+    fSoundPool := TJSoundPool.JavaClass.Init(4, TJAudioManager.JavaClass.STREAM_MUSIC, 0);
     {$ENDIF}
   except
     on E: Exception do
-        raise Exception.Create('[TAudioManager.Create] : ' + E.message);
+        raise Exception.Create('[TAudioManager.Create] : ' + E.Message);
   end;
 end;
 
 destructor TAudioManager.Destroy;
 var
-  i   : integer;
+  i   : Integer;
   wRec: PSoundRec;
 begin
   try
@@ -210,11 +210,11 @@ begin
     inherited Destroy;
   except
     on E: Exception do
-        raise Exception.Create('[TAudioManager.Destroy] : ' + E.message);
+        raise Exception.Create('[TAudioManager.Destroy] : ' + E.Message);
   end;
 end;
 
-function TAudioManager.AddSound(ASoundFile: SystemString): integer;
+function TAudioManager.AddSound(ASoundFile: SystemString): Integer;
 var
   wSndRec: PSoundRec;
   {$IFDEF ANDROID}
@@ -231,7 +231,7 @@ var
 begin
   Result := -1;
   try
-    New(wSndRec);
+    new(wSndRec);
     wSndRec.SFilename := ASoundFile;
     wSndRec.SNameExt := ExtractFilename(ASoundFile);
     wSndRec.SName := ChangeFileExt(wSndRec.SNameExt, '');
@@ -240,7 +240,7 @@ begin
     wSndRec.SID := fSoundPool.load(StringToJString(ASoundFile), 0);
     {$ENDIF}
     {$IFDEF IOS}
-    wNSFilename := CFStringCreateWithCharacters(nil, PChar(ASoundFile), Length(ASoundFile));
+    wNSFilename := CFStringCreateWithCharacters(nil, PChar(ASoundFile), length(ASoundFile));
     wNSURL := CFURLCreateWithFileSystemPath(nil, wNSFilename, kCFURLPOSIXPathStyle, False);
     AudioServicesCreateSystemSoundID(wNSURL, pnsinteger(wSndID));
     wSndRec.SID := wSndID;
@@ -250,18 +250,18 @@ begin
     fSoundsHashList.Add(umlGetFileName(ASoundFile), Result);
   except
     on E: Exception do
-        raise Exception.Create('[TAudioManager.AddSound] : ' + E.message);
+        raise Exception.Create('[TAudioManager.AddSound] : ' + E.Message);
   end;
 end;
 
-procedure TAudioManager.DeleteSound(Aindex: integer);
+procedure TAudioManager.DeleteSound(aIndex: Integer);
 var
   wRec: PSoundRec;
 begin
   try
-    if Aindex < fSoundsList.Count then
+    if aIndex < fSoundsList.Count then
       begin
-        wRec := fSoundsList[Aindex];
+        wRec := fSoundsList[aIndex];
         {$IFDEF ANDROID}
         fSoundPool.unload(wRec.SID);
         {$ENDIF}
@@ -269,15 +269,15 @@ begin
         AudioServicesDisposeSystemSoundID(wRec.SID);
         {$ENDIF}
         Dispose(wRec);
-        fSoundsList.Delete(Aindex);
+        fSoundsList.Delete(aIndex);
       end;
   except
     on E: Exception do
-        raise Exception.Create('[TAudioManager.DeleteSound] : ' + E.message);
+        raise Exception.Create('[TAudioManager.DeleteSound] : ' + E.Message);
   end;
 end;
 
-procedure TAudioManager.PlaySound(Aindex: integer);
+procedure TAudioManager.PlaySound(aIndex: Integer);
 var
   wRec: PSoundRec;
   {$IFDEF ANDROID}
@@ -291,9 +291,9 @@ var
   {$ENDIF}
 begin
   try
-    if Aindex < fSoundsList.Count then
+    if aIndex < fSoundsList.Count then
       begin
-        wRec := fSoundsList[Aindex];
+        wRec := fSoundsList[aIndex];
         {$IFDEF ANDROID}
         if Assigned(fAudioMgr) then
           begin
@@ -308,7 +308,7 @@ begin
         AudioServicesPlaySystemSound(wRec.SID);
         {$ELSE}
         {$IFDEF MACOS}
-        wNssound := TNSSound.Wrap(TNSSound.Alloc.initWithContentsOfFile(StrToNSStr(wRec.SFilename), true));
+        wNssound := TNSSound.Wrap(TNSSound.Alloc.initWithContentsOfFile(StrToNSStr(wRec.SFilename), True));
         try
           wNssound.setLoops(False);
           wNssound.Play;
@@ -323,39 +323,39 @@ begin
       end;
   except
     on E: Exception do
-        raise Exception.Create('[Unknown Name] : ' + E.message);
+        raise Exception.Create('[Unknown Name] : ' + E.Message);
   end;
 end;
 
-procedure TAudioManager.DeleteSound(AFile: SystemString);
+procedure TAudioManager.DeleteSound(aFile: SystemString);
 begin
-  if not Exists(AFile) then
-      exit;
-  DeleteSound(integer(fSoundsHashList[umlGetFileName(AFile)]));
-  fSoundsHashList.Delete(umlGetFileName(AFile));
+  if not Exists(aFile) then
+      Exit;
+  DeleteSound(Integer(fSoundsHashList[umlGetFileName(aFile)]));
+  fSoundsHashList.Delete(umlGetFileName(aFile));
 end;
 
-procedure TAudioManager.PlaySound(AFile: SystemString);
+procedure TAudioManager.PlaySound(aFile: SystemString);
 begin
-  if not Exists(AFile) then
-      exit;
-  PlaySound(integer(fSoundsHashList[umlGetFileName(AFile)]));
+  if not Exists(aFile) then
+      Exit;
+  PlaySound(Integer(fSoundsHashList[umlGetFileName(aFile)]));
 end;
 
-function TAudioManager.Exists(AFile: SystemString): Boolean;
+function TAudioManager.Exists(aFile: SystemString): Boolean;
 begin
-  Result := fSoundsHashList.Exists(umlGetFileName(AFile));
+  Result := fSoundsHashList.Exists(umlGetFileName(aFile));
 end;
 
-function TAudioManager.GetSoundsCount: integer;
+function TAudioManager.GetSoundsCount: Integer;
 begin
   Result := fSoundsList.Count;
 end;
 
-function TAudioManager.GetSoundFromIndex(Aindex: integer): PSoundRec;
+function TAudioManager.GetSoundFromIndex(aIndex: Integer): PSoundRec;
 begin
-  if Aindex < fSoundsList.Count then
-      Result := fSoundsList[Aindex]
+  if aIndex < fSoundsList.Count then
+      Result := fSoundsList[aIndex]
   else
       Result := nil;
 end;
@@ -397,9 +397,9 @@ begin
   Media.Play;
 end;
 
-procedure TSEMediaPlayer.Stop;
+procedure TSEMediaPlayer.stop;
 begin
-  Media.Stop;
+  Media.stop;
 end;
 
 function TSEMediaPlayer.Playing: Boolean;
@@ -420,12 +420,12 @@ begin
   else
       FMediaMusic.CurrentTime := 0;
   FMediaMusic.Play;
-  FMusicPlaying := true;
+  FMusicPlaying := True;
 end;
 
 procedure TSoundEngine_FMX.DoStopMusic;
 begin
-  FMediaMusic.Stop;
+  FMediaMusic.stop;
   FMusicPlaying := False;
 end;
 
@@ -442,12 +442,12 @@ begin
   else
       FMediaAmbient.CurrentTime := 0;
   FMediaAmbient.Play;
-  FAmbientPlaying := true;
+  FAmbientPlaying := True;
 end;
 
 procedure TSoundEngine_FMX.DoStopAmbient;
 begin
-  FMediaAmbient.Stop;
+  FMediaAmbient.stop;
   FAmbientPlaying := False;
 end;
 
@@ -469,8 +469,8 @@ end;
 
 procedure TSoundEngine_FMX.DoStopAll;
 begin
-  FMediaMusic.Stop;
-  FMediaAmbient.Stop;
+  FMediaMusic.stop;
+  FMediaAmbient.stop;
   FMusicPlaying := False;
   FAmbientPlaying := False;
 end;
@@ -486,10 +486,10 @@ begin
     begin
       Result := FCacheFileList[FileName];
       if umlFileExists(Result) then
-          exit;
+          Exit;
     end;
 
-  FileIO.ChangePrioritySearchOption(SearchDB, true, '');
+  FileIO.ChangePrioritySearchOption(SearchDB, True, '');
   SourStream := FileIOOpen(FileName);
   if SourStream = nil then
       RaiseInfo('no sound file: "%s"', [FileName]);
@@ -515,14 +515,14 @@ begin
   Result := umlFileExists(FileName);
 end;
 
-function TSoundEngine_FMX.MediaIsPlaying(m: TSEBase): Boolean;
+function TSoundEngine_FMX.MediaIsPlaying(M: TSEBase): Boolean;
 begin
-  Result := m.Playing;
+  Result := M.Playing;
 end;
 
 constructor TSoundEngine_FMX.Create(ATempPath: SystemString);
 var
-  i: integer;
+  i: Integer;
 begin
   inherited Create(ATempPath);
   FMediaMusic := TSEMediaPlayer.Create;
@@ -536,7 +536,7 @@ end;
 
 destructor TSoundEngine_FMX.Destroy;
 var
-  i: integer;
+  i: Integer;
 begin
   StopAll;
   DisposeObject(FMediaMusic);
@@ -549,7 +549,7 @@ end;
 
 procedure TSoundEngine_FMX.Progress(deltaTime: Double);
 var
-  i: integer;
+  i: Integer;
 begin
   inherited Progress(deltaTime);
 
@@ -585,4 +585,7 @@ finalization
 
 DisposeObject(AudioManager);
 
-end.
+end. 
+ 
+ 
+ 

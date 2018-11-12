@@ -6,11 +6,13 @@
 { * https://github.com/PassByYou888/zTranslate                                 * }
 { * https://github.com/PassByYou888/zSound                                     * }
 { * https://github.com/PassByYou888/zAnalysis                                  * }
+{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/zRasterization                             * }
 { ****************************************************************************** }
 
 unit Cadencer;
 
-{$I zDefine.inc}
+{$INCLUDE zDefine.inc}
 
 interface
 
@@ -20,9 +22,9 @@ type
   { : Progression event for time-base animations/simulations.<p>
     deltaTime is the time delta since last progress and newTime is the new
     time after the progress event is completed. }
-  TCadencerProgressMethod             = procedure(Sender: TObject; const deltaTime, newTime: Double) of object;
-  TCadencerProgressCall               = procedure(Sender: TObject; const deltaTime, newTime: Double);
-  {$IFNDEF FPC} TCadencerProgressProc = reference to procedure(Sender: TObject; const deltaTime, newTime: Double); {$ENDIF}
+  TCadencerProgressMethod = procedure(Sender: TObject; const deltaTime, newTime: Double) of object;
+  TCadencerProgressCall = procedure(Sender: TObject; const deltaTime, newTime: Double);
+{$IFNDEF FPC} TCadencerProgressProc = reference to procedure(Sender: TObject; const deltaTime, newTime: Double); {$ENDIF}
 
   ICadencerProgressInterface = interface
     procedure CadencerProgress(const deltaTime, newTime: Double);
@@ -41,20 +43,20 @@ type
   TCadencer = class(TCoreClassObject)
   private
     { Private Declarations }
-    FTimeMultiplier                              : Double;
-    lastTime, downTime, lastMultiplier           : Double;
-    FEnabled                                     : Boolean;
-    FSleepLength                                 : Integer;
-    FCurrentTime                                 : Double;
-    FOriginTime                                  : Double;
+    FTimeMultiplier: Double;
+    lastTime, downTime, lastMultiplier: Double;
+    FEnabled: Boolean;
+    FSleepLength: Integer;
+    FCurrentTime: Double;
+    FOriginTime: Double;
     FMaxDeltaTime, FMinDeltaTime, FFixedDeltaTime: Double;
-    FOnProgress                                  : TCadencerProgressMethod;
-    FOnProgressCall                              : TCadencerProgressCall;
-    {$IFNDEF FPC}
-    FOnProgressProc                              : TCadencerProgressProc;
-    {$ENDIF FPC}
-    FProgressing                                 : Integer;
-    FProgressIntf                                : ICadencerProgressInterface;
+    FOnProgress: TCadencerProgressMethod;
+    FOnProgressCall: TCadencerProgressCall;
+{$IFNDEF FPC}
+    FOnProgressProc: TCadencerProgressProc;
+{$ENDIF FPC}
+    FProgressing: Integer;
+    FProgressIntf: ICadencerProgressInterface;
   protected
     { Protected Declarations }
     function StoreTimeMultiplier: Boolean;
@@ -129,7 +131,7 @@ type
     { backcall }
     property OnProgress: TCadencerProgressMethod read FOnProgress write FOnProgress;
     property OnProgressCall: TCadencerProgressCall read FOnProgressCall write FOnProgressCall;
-    {$IFNDEF FPC} property OnProgressProc: TCadencerProgressProc read FOnProgressProc write FOnProgressProc; {$ENDIF FPC}
+{$IFNDEF FPC} property OnProgressProc: TCadencerProgressProc read FOnProgressProc write FOnProgressProc; {$ENDIF FPC}
     { intf }
     property ProgressIntf: ICadencerProgressInterface read FProgressIntf write FProgressIntf;
   end;
@@ -218,7 +220,7 @@ begin
   Enabled := True;
   FOnProgress := nil;
   FOnProgressCall := nil;
-  {$IFNDEF FPC} FOnProgressProc := nil; {$ENDIF FPC}
+{$IFNDEF FPC} FOnProgressProc := nil; {$ENDIF FPC}
   FProgressIntf := nil;
 end;
 
@@ -245,7 +247,7 @@ begin
       if SleepLength >= 0 then
           TCoreClassThread.Sleep(SleepLength);
     end;
-  Inc(FProgressing);
+  inc(FProgressing);
   try
     if Enabled then begin
         // One of the processed messages might have disabled us
@@ -272,11 +274,10 @@ begin
                       if Assigned(FOnProgressCall) then
                           FOnProgressCall(Self, deltaTime, newTime);
 
-                      {$IFNDEF FPC}
+{$IFNDEF FPC}
                       if Assigned(FOnProgressProc) then
                           FOnProgressProc(Self, deltaTime, newTime);
-                      {$ENDIF FPC}
-                      { }
+{$ENDIF FPC}
                       if Assigned(FProgressIntf) then
                           FProgressIntf.CadencerProgress(deltaTime, newTime);
                     except
@@ -290,7 +291,7 @@ begin
           end;
       end;
   finally
-      Dec(FProgressing);
+      dec(FProgressing);
   end;
 end;
 

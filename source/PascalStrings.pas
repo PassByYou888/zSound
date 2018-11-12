@@ -6,6 +6,8 @@
 { * https://github.com/PassByYou888/zTranslate                                 * }
 { * https://github.com/PassByYou888/zSound                                     * }
 { * https://github.com/PassByYou888/zAnalysis                                  * }
+{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/zRasterization                             * }
 { ****************************************************************************** }
 
 (*
@@ -16,45 +18,41 @@
 
 unit PascalStrings;
 
+{$INCLUDE zDefine.inc}
+
 interface
-
-{$I zDefine.inc}
-
 
 uses SysUtils;
 
 type
-  SystemChar    = char;
+  SystemChar    = Char;
   SystemString  = string;
   THash         = Cardinal;
   THash64       = UInt64;
   PSystemString = ^SystemString;
-
   PPascalString = ^TPascalString;
-
-  TPascalChars = packed array of SystemChar;
-
-  TOrdChar  = (c0to9, c1to9, c0to32, c0to32no10, cLoAtoF, cHiAtoF, cLoAtoZ, cHiAtoZ, cHex, cAtoF, cAtoZ);
-  TOrdChars = set of TOrdChar;
+  TArrayChar    = array of SystemChar;
+  TOrdChar      = (c0to9, c1to9, c0to32, c0to32no10, cLoAtoF, cHiAtoF, cLoAtoZ, cHiAtoZ, cHex, cAtoF, cAtoZ);
+  TOrdChars     = set of TOrdChar;
 
   TPascalString = record
   private
-    function GetText: SystemString; inline;
-    procedure SetText(const Value: SystemString); inline;
-    function GetLen: Integer; inline;
-    procedure SetLen(const Value: Integer); inline;
-    function GetChars(index: Integer): SystemChar; inline;
-    procedure SetChars(index: Integer; const Value: SystemChar); inline;
-    function GetBytes: TBytes; inline;
-    procedure SetBytes(const Value: TBytes); inline;
-    function GetLast: SystemChar; inline;
-    procedure SetLast(const Value: SystemChar); inline;
-    function GetFirst: SystemChar; inline;
-    procedure SetFirst(const Value: SystemChar); inline;
+    function GetText: SystemString;
+    procedure SetText(const Value: SystemString);
+    function GetLen: Integer;
+    procedure SetLen(const Value: Integer);
+    function GetChars(index: Integer): SystemChar;
+    procedure SetChars(index: Integer; const Value: SystemChar);
+    function GetBytes: TBytes;
+    procedure SetBytes(const Value: TBytes);
+    function GetLast: SystemChar;
+    procedure SetLast(const Value: SystemChar);
+    function GetFirst: SystemChar;
+    procedure SetFirst(const Value: SystemChar);
   public
-    Buff: TPascalChars;
+    buff: TArrayChar;
 
-    {$IFDEF DELPHI}
+{$IFDEF DELPHI}
     class operator Equal(const Lhs, Rhs: TPascalString): Boolean;
     class operator NotEqual(const Lhs, Rhs: TPascalString): Boolean;
     class operator GreaterThan(const Lhs, Rhs: TPascalString): Boolean;
@@ -75,59 +73,63 @@ type
     class operator Implicit(Value: TPascalString): Variant;
 
     class operator Explicit(Value: TPascalString): SystemString;
-    class operator Explicit(Value: TPascalString): Variant;
     class operator Explicit(Value: SystemString): TPascalString;
-    class operator Explicit(Value: Variant): TPascalString;
     class operator Explicit(Value: SystemChar): TPascalString;
-    {$ENDIF}
-    function copy(index, count: NativeInt): TPascalString;
-    function Same(const p: PPascalString): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-    function Same(const t: TPascalString): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-    function Same(const IgnoreCase: Boolean; const t: TPascalString): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-    function ComparePos(const Offset: Integer; const p: PPascalString): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-    function ComparePos(const Offset: Integer; const t: TPascalString): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-    function GetPos(const s: TPascalString; const Offset: Integer = 1): Integer; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-    function GetPos(const s: PPascalString; const Offset: Integer = 1): Integer; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
+    class operator Explicit(Value: Variant): TPascalString;
+    class operator Explicit(Value: TPascalString): Variant;
+{$ENDIF}
+    function Copy(index, Count: NativeInt): TPascalString;
+    function Same(const p: PPascalString): Boolean; overload;
+    function Same(const t: TPascalString): Boolean; overload;
+    function Same(const t1, t2: TPascalString): Boolean; overload;
+    function Same(const t1, t2, t3: TPascalString): Boolean; overload;
+    function Same(const t1, t2, t3, t4: TPascalString): Boolean; overload;
+    function Same(const t1, t2, t3, t4, t5: TPascalString): Boolean; overload;
+    function Same(const IgnoreCase: Boolean; const t: TPascalString): Boolean; overload;
+    function ComparePos(const Offset: Integer; const p: PPascalString): Boolean; overload;
+    function ComparePos(const Offset: Integer; const t: TPascalString): Boolean; overload;
+    function GetPos(const s: TPascalString; const Offset: Integer = 1): Integer; overload;
+    function GetPos(const s: PPascalString; const Offset: Integer = 1): Integer; overload;
     function Exists(c: SystemChar): Boolean; overload;
     function Exists(c: array of SystemChar): Boolean; overload;
     function Exists(const s: TPascalString): Boolean; overload;
     function GetCharCount(c: SystemChar): Integer;
     //
-    function Hash: THash; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-    function Hash64: THash64; {$IFDEF INLINE_ASM} inline; {$ENDIF}
+    function hash: THash;
+    function Hash64: THash64;
     //
     property Last: SystemChar read GetLast write SetLast;
     property First: SystemChar read GetFirst write SetFirst;
 
-    procedure DeleteLast; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-    procedure DeleteFirst; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-    procedure Delete(idx, cnt: Integer); {$IFDEF INLINE_ASM} inline; {$ENDIF}
-    procedure Clear; {$IFDEF INLINE_ASM} inline; {$ENDIF}
+    procedure DeleteLast;
+    procedure DeleteFirst;
+    procedure Delete(idx, cnt: Integer);
+    procedure Clear;
     procedure Append(t: TPascalString); overload;
     procedure Append(c: SystemChar); overload;
-    function GetString(bPos, ePos: NativeInt): TPascalString; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-    procedure Insert(AText: SystemString; idx: Integer); {$IFDEF INLINE_ASM} inline; {$ENDIF}
+    function GetString(bPos, ePos: NativeInt): TPascalString;
+    procedure Insert(AText: SystemString; idx: Integer);
     //
-    procedure FastAsText(var Output: SystemString);
-    procedure FastGetBytes(var Output: TBytes); {$IFDEF INLINE_ASM} inline; {$ENDIF}
+    procedure FastAsText(var output: SystemString);
+    procedure FastGetBytes(var output: TBytes);
     //
     property Text: SystemString read GetText write SetText;
     function LowerText: SystemString;
     function UpperText: SystemString;
     function Invert: TPascalString;
-    function TrimChar(const charS: TPascalString): TPascalString;
-    function DeleteChar(const charS: TPascalString): TPascalString; overload;
-    function DeleteChar(const charS: TOrdChars): TPascalString; overload;
-    function ReplaceChar(const charS: TPascalString; const newChar: SystemChar): TPascalString; overload;
-    function ReplaceChar(const charS, newChar: SystemChar): TPascalString; overload;
-    function ReplaceChar(const charS: TOrdChars; const newChar: SystemChar): TPascalString; overload;
+    function TrimChar(const Chars: TPascalString): TPascalString;
+    function DeleteChar(const Chars: TPascalString): TPascalString; overload;
+    function DeleteChar(const Chars: TOrdChars): TPascalString; overload;
+    function ReplaceChar(const Chars: TPascalString; const newChar: SystemChar): TPascalString; overload;
+    function ReplaceChar(const Chars, newChar: SystemChar): TPascalString; overload;
+    function ReplaceChar(const Chars: TOrdChars; const newChar: SystemChar): TPascalString; overload;
 
     { https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm }
     function SmithWaterman(const p: PPascalString): Double; overload;
     function SmithWaterman(const s: TPascalString): Double; overload;
 
     property Len: Integer read GetLen write SetLen;
-    property charS[index: Integer]: SystemChar read GetChars write SetChars; default;
+    property Chars[index: Integer]: SystemChar read GetChars write SetChars; default;
     property Bytes: TBytes read GetBytes write SetBytes;
     function BOMBytes: TBytes;
   end;
@@ -139,22 +141,22 @@ type
   PArrayPascalStringPtr = ^TArrayPascalStringPtr;
 
 function CharIn(c: SystemChar; const SomeChars: array of SystemChar): Boolean; overload;
-function CharIn(c: SystemChar; const SomeChar: SystemChar): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-function CharIn(c: SystemChar; const s: TPascalString): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-function CharIn(c: SystemChar; const p: PPascalString): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-function CharIn(c: SystemChar; const SomeCharsets: TOrdChars): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-function CharIn(c: SystemChar; const SomeCharset: TOrdChar): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-function CharIn(c: SystemChar; const SomeCharsets: TOrdChars; const SomeChars: TPascalString): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-function CharIn(c: SystemChar; const SomeCharsets: TOrdChars; const p: PPascalString): Boolean; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
+function CharIn(c: SystemChar; const SomeChar: SystemChar): Boolean; overload;
+function CharIn(c: SystemChar; const s: TPascalString): Boolean; overload;
+function CharIn(c: SystemChar; const p: PPascalString): Boolean; overload;
+function CharIn(c: SystemChar; const SomeCharsets: TOrdChars): Boolean; overload;
+function CharIn(c: SystemChar; const SomeCharset: TOrdChar): Boolean; overload;
+function CharIn(c: SystemChar; const SomeCharsets: TOrdChars; const SomeChars: TPascalString): Boolean; overload;
+function CharIn(c: SystemChar; const SomeCharsets: TOrdChars; const p: PPascalString): Boolean; overload;
 
-function FastHashSystemString(const s: PSystemString): THash; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-function FastHash64SystemString(const s: PSystemString): THash64; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
+function FastHashPSystemString(const s: PSystemString): THash; overload;
+function FastHash64PSystemString(const s: PSystemString): THash64; overload;
 
-function FastHashSystemString(const s: SystemString): THash; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-function FastHash64SystemString(const s: SystemString): THash64; overload; {$IFDEF INLINE_ASM} inline; {$ENDIF}
+function FastHashSystemString(const s: SystemString): THash; overload;
+function FastHash64SystemString(const s: SystemString): THash64; overload;
 
-function FastHashPascalString(const s: PPascalString): THash; {$IFDEF INLINE_ASM} inline; {$ENDIF}
-function FastHash64PascalString(const s: PPascalString): THash64; {$IFDEF INLINE_ASM} inline; {$ENDIF}
+function FastHashPPascalString(const s: PPascalString): THash;
+function FastHash64PPascalString(const s: PPascalString): THash64;
 
 function PFormat(const Fmt: SystemString; const Args: array of const): SystemString;
 
@@ -173,28 +175,30 @@ operator := (const s: TPascalString)r: WideString;
 operator := (const s: TPascalString)r: ShortString;
 operator := (const s: TPascalString)r: Variant;
 
-operator = (const A: TPascalString; const B: TPascalString): Boolean;
-operator <> (const A: TPascalString; const B: TPascalString): Boolean;
-operator > (const A: TPascalString; const B: TPascalString): Boolean;
-operator >= (const A: TPascalString; const B: TPascalString): Boolean;
-operator < (const A: TPascalString; const B: TPascalString): Boolean;
-operator <= (const A: TPascalString; const B: TPascalString): Boolean;
+operator = (const a: TPascalString; const b: TPascalString): Boolean;
+operator <> (const a: TPascalString; const b: TPascalString): Boolean;
+operator > (const a: TPascalString; const b: TPascalString): Boolean;
+operator >= (const a: TPascalString; const b: TPascalString): Boolean;
+operator < (const a: TPascalString; const b: TPascalString): Boolean;
+operator <= (const a: TPascalString; const b: TPascalString): Boolean;
 
-operator + (const A: TPascalString; const B: TPascalString): TPascalString;
-operator + (const A: TPascalString; const B: SystemString): TPascalString;
-operator + (const A: SystemString; const B: TPascalString): TPascalString;
-operator + (const A: TPascalString; const B: SystemChar): TPascalString;
-operator + (const A: SystemChar; const B: TPascalString): TPascalString;
+operator + (const a: TPascalString; const b: TPascalString): TPascalString;
+operator + (const a: TPascalString; const b: SystemString): TPascalString;
+operator + (const a: SystemString; const b: TPascalString): TPascalString;
+operator + (const a: TPascalString; const b: SystemChar): TPascalString;
+operator + (const a: SystemChar; const b: TPascalString): TPascalString;
 
-{$ENDIF}
+{$ENDIF FPC}
 
 { https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm }
 
 // short string likeness and out diff
 function SmithWatermanCompare(const seq1, seq2: PPascalString; var diff1, diff2: TPascalString;
-  const NoDiffChar: Boolean = False; const diffChar: SystemChar = '-'): Double; overload;
+  const NoDiffChar: Boolean; const diffChar: SystemChar): Double; overload;
+function SmithWatermanCompare(const seq1, seq2: PPascalString; var diff1, diff2: TPascalString): Double; overload;
 function SmithWatermanCompare(const seq1, seq2: TPascalString; var diff1, diff2: TPascalString;
-  const NoDiffChar: Boolean = False; const diffChar: SystemChar = '-'): Double; overload;
+  const NoDiffChar: Boolean; const diffChar: SystemChar): Double; overload;
+function SmithWatermanCompare(const seq1, seq2: TPascalString; var diff1, diff2: TPascalString): Double; overload;
 
 // short string likeness
 function SmithWatermanCompare(const seq1, seq2: PPascalString; out Same, Diff: Integer): Double; overload;
@@ -213,83 +217,83 @@ function SmithWatermanCompareLongString(const t1, t2: TPascalString): Double; ov
 
 var
   SystemCharSize: NativeInt = SizeOf(SystemChar);
-  {$IFDEF CPU64}
+{$IFDEF CPU64}
   MaxSmithWatermanMatrix: NativeInt = 10000 * 10;
-  {$ELSE}
+{$ELSE}
   MaxSmithWatermanMatrix: NativeInt = 8192;
-  {$ENDIF}
+{$ENDIF}
 
 
 const
-  {$IFDEF FirstCharInZero}
+{$IFDEF FirstCharInZero}
   FirstCharPos = 0;
-  {$ELSE}
+{$ELSE}
   FirstCharPos = 1;
-  {$ENDIF}
+{$ENDIF}
 
 implementation
 
 uses CoreClasses, Variants;
 
-procedure CombineCharsPP(const c1, c2: TPascalChars; var Output: TPascalChars); {$IFDEF INLINE_ASM} inline; {$ENDIF}
+procedure CombineCharsPP(const c1, c2: TArrayChar; var output: TArrayChar);
 var
-  ll, rl: Integer;
+  LL, rl: Integer;
 begin
-  ll := Length(c1);
-  rl := Length(c2);
-  SetLength(Output, ll + rl);
-  if ll > 0 then
-      CopyPtr(@c1[0], @Output[0], ll * SystemCharSize);
+  LL := length(c1);
+  rl := length(c2);
+  SetLength(output, LL + rl);
+  if LL > 0 then
+      CopyPtr(@c1[0], @output[0], LL * SystemCharSize);
   if rl > 0 then
-      CopyPtr(@c2[0], @Output[ll], rl * SystemCharSize);
+      CopyPtr(@c2[0], @output[LL], rl * SystemCharSize);
 end;
 
-procedure CombineCharsSP(const c1: SystemString; const c2: TPascalChars; var Output: TPascalChars); {$IFDEF INLINE_ASM} inline; {$ENDIF}
+procedure CombineCharsSP(const c1: SystemString; const c2: TArrayChar; var output: TArrayChar);
 var
-  ll, rl: Integer;
+  LL, rl: Integer;
 begin
-  ll := Length(c1);
-  rl := Length(c2);
-  SetLength(Output, ll + rl);
-  if ll > 0 then
-      CopyPtr(@c1[FirstCharPos], @Output[0], ll * SystemCharSize);
+  LL := length(c1);
+  rl := length(c2);
+  SetLength(output, LL + rl);
+  if LL > 0 then
+      CopyPtr(@c1[FirstCharPos], @output[0], LL * SystemCharSize);
   if rl > 0 then
-      CopyPtr(@c2[0], @Output[ll], rl * SystemCharSize);
+      CopyPtr(@c2[0], @output[LL], rl * SystemCharSize);
 end;
 
-procedure CombineCharsPS(const c1: TPascalChars; const c2: SystemString; var Output: TPascalChars); {$IFDEF INLINE_ASM} inline; {$ENDIF}
+procedure CombineCharsPS(const c1: TArrayChar; const c2: SystemString; var output: TArrayChar);
 var
-  ll, rl: Integer;
+  LL, rl: Integer;
 begin
-  ll := Length(c1);
-  rl := Length(c2);
-  SetLength(Output, ll + rl);
-  if ll > 0 then
-      CopyPtr(@c1[0], @Output[0], ll * SystemCharSize);
+  LL := length(c1);
+  rl := length(c2);
+  SetLength(output, LL + rl);
+  if LL > 0 then
+      CopyPtr(@c1[0], @output[0], LL * SystemCharSize);
   if rl > 0 then
-      CopyPtr(@c2[FirstCharPos], @Output[ll], rl * SystemCharSize);
+      CopyPtr(@c2[FirstCharPos], @output[LL], rl * SystemCharSize);
 end;
 
-procedure CombineCharsCP(const c1: SystemChar; const c2: TPascalChars; var Output: TPascalChars); {$IFDEF INLINE_ASM} inline; {$ENDIF}
+procedure CombineCharsCP(const c1: SystemChar; const c2: TArrayChar; var output: TArrayChar);
 var
   rl: Integer;
 begin
-  rl := Length(c2);
-  SetLength(Output, rl + 1);
-  Output[0] := c1;
+  rl := length(c2);
+  SetLength(output, rl + 1);
+  output[0] := c1;
   if rl > 0 then
-      CopyPtr(@c2[0], @Output[1], rl * SystemCharSize);
+      CopyPtr(@c2[0], @output[1], rl * SystemCharSize);
 end;
 
-procedure CombineCharsPC(const c1: TPascalChars; const c2: SystemChar; var Output: TPascalChars); {$IFDEF INLINE_ASM} inline; {$ENDIF}
+procedure CombineCharsPC(const c1: TArrayChar; const c2: SystemChar; var output: TArrayChar);
 var
-  ll: Integer;
+  LL: Integer;
 begin
-  ll := Length(c1);
-  SetLength(Output, ll + 1);
-  if ll > 0 then
-      CopyPtr(@c1[0], @Output[0], ll * SystemCharSize);
-  Output[ll] := c2;
+  LL := length(c1);
+  SetLength(output, LL + 1);
+  if LL > 0 then
+      CopyPtr(@c1[0], @output[0], LL * SystemCharSize);
+  output[LL] := c2;
 end;
 
 function CharIn(c: SystemChar; const SomeChars: array of SystemChar): Boolean;
@@ -320,20 +324,20 @@ end;
 
 function CharIn(c: SystemChar; const SomeCharset: TOrdChar): Boolean;
 const
-  ord0  = ord('0');
-  ord1  = ord('1');
-  ord9  = ord('9');
-  ordLA = ord('a');
-  ordHA = ord('A');
-  ordLF = ord('f');
-  ordHF = ord('F');
-  ordLZ = ord('z');
-  ordHZ = ord('Z');
+  ord0  = Ord('0');
+  ord1  = Ord('1');
+  ord9  = Ord('9');
+  ordLA = Ord('a');
+  ordHA = Ord('A');
+  ordLF = Ord('f');
+  ordHF = Ord('F');
+  ordLZ = Ord('z');
+  ordHZ = Ord('Z');
 
 var
-  v: NativeInt;
+  v: Word;
 begin
-  v := ord(c);
+  v := Ord(c);
   case SomeCharset of
     c0to9: Result := (v >= ord0) and (v <= ord9);
     c1to9: Result := (v >= ord1) and (v <= ord9);
@@ -387,18 +391,18 @@ begin
   Result.Bytes := s;
 end;
 
-function FastHashSystemString(const s: PSystemString): THash;
+function FastHashPSystemString(const s: PSystemString): THash;
 var
   i: Integer;
   c: SystemChar;
 begin
   Result := 0;
 
-  {$IFDEF FirstCharInZero}
-  for i := 0 to Length(s^) - 1 do
-  {$ELSE}
-  for i := 1 to Length(s^) do
-    {$ENDIF}
+{$IFDEF FirstCharInZero}
+  for i := 0 to length(s^) - 1 do
+{$ELSE}
+  for i := 1 to length(s^) do
+{$ENDIF}
     begin
       c := s^[i];
       if CharIn(c, cHiAtoZ) then
@@ -407,18 +411,18 @@ begin
     end;
 end;
 
-function FastHash64SystemString(const s: PSystemString): THash64;
+function FastHash64PSystemString(const s: PSystemString): THash64;
 var
   i: Integer;
   c: SystemChar;
 begin
   Result := 0;
 
-  {$IFDEF FirstCharInZero}
-  for i := 0 to Length(s^) - 1 do
-  {$ELSE}
-  for i := 1 to Length(s^) do
-    {$ENDIF}
+{$IFDEF FirstCharInZero}
+  for i := 0 to length(s^) - 1 do
+{$ELSE}
+  for i := 1 to length(s^) do
+{$ENDIF}
     begin
       c := s^[i];
       if CharIn(c, cHiAtoZ) then
@@ -429,15 +433,15 @@ end;
 
 function FastHashSystemString(const s: SystemString): THash;
 begin
-  Result := FastHashSystemString(@s);
+  Result := FastHashPSystemString(@s);
 end;
 
 function FastHash64SystemString(const s: SystemString): THash64;
 begin
-  Result := FastHash64SystemString(@s);
+  Result := FastHash64PSystemString(@s);
 end;
 
-function FastHashPascalString(const s: PPascalString): THash;
+function FastHashPPascalString(const s: PPascalString): THash;
 var
   i: Integer;
   c: SystemChar;
@@ -452,7 +456,7 @@ begin
     end;
 end;
 
-function FastHash64PascalString(const s: PPascalString): THash64;
+function FastHash64PPascalString(const s: PPascalString): THash64;
 var
   i: Integer;
   c: SystemChar;
@@ -481,13 +485,13 @@ end;
 function GetSWMV(const p: Pointer; const w, x, y: NativeInt): NativeInt; inline;
 { optimized matrix performance }
 begin
-  Result := PNativeInt(NativeUInt(p) + ((x + y * (w + 1)) * SizeOf(NativeInt)))^;
+  Result := PNativeInt(nativeUInt(p) + ((x + y * (w + 1)) * SizeOf(NativeInt)))^;
 end;
 
 procedure SetSWMV(const p: Pointer; const w, x, y: NativeInt; const v: NativeInt); inline;
 { optimized matrix performance }
 begin
-  PNativeInt(NativeUInt(p) + ((x + y * (w + 1)) * SizeOf(NativeInt)))^ := v;
+  PNativeInt(nativeUInt(p) + ((x + y * (w + 1)) * SizeOf(NativeInt)))^ := v;
 end;
 
 function GetMax(const i1, i2: NativeInt): NativeInt; inline;
@@ -523,23 +527,23 @@ function SmithWatermanCompare(const seq1, seq2: PPascalString; var diff1, diff2:
 
 var
   swMatrixPtr: Pointer;
-  i, j, l1, l2: NativeInt;
+  i, j, L1, l2: NativeInt;
   matched, deleted, inserted: NativeInt;
   score_current, score_diagonal, score_left, score_right: NativeInt;
   identity: NativeInt;
   align1, align2: TPascalString;
 begin
-  l1 := seq1^.Len;
+  L1 := seq1^.Len;
   l2 := seq2^.Len;
 
-  if (l1 = 0) or (l2 = 0) or (l1 > MaxSmithWatermanMatrix) or (l2 > MaxSmithWatermanMatrix) then
+  if (L1 = 0) or (l2 = 0) or (L1 > MaxSmithWatermanMatrix) or (l2 > MaxSmithWatermanMatrix) then
     begin
       Result := -1;
       Exit;
     end;
 
   { fast build matrix }
-  swMatrixPtr := GetSWMVMemory(l1, l2);
+  swMatrixPtr := GetSWMVMemory(L1, l2);
   if swMatrixPtr = nil then
     begin
       diff1 := '';
@@ -549,47 +553,47 @@ begin
     end;
 
   i := 0;
-  while i <= l1 do
+  while i <= L1 do
     begin
-      SetSWMV(swMatrixPtr, l1, i, 0, gap_penalty * i);
+      SetSWMV(swMatrixPtr, L1, i, 0, gap_penalty * i);
       inc(i);
     end;
 
   j := 0;
   while j <= l2 do
     begin
-      SetSWMV(swMatrixPtr, l1, 0, j, gap_penalty * j);
+      SetSWMV(swMatrixPtr, L1, 0, j, gap_penalty * j);
       inc(j);
     end;
 
   { compute matrix }
   i := 1;
-  while i <= l1 do
+  while i <= L1 do
     begin
       j := 1;
       while j <= l2 do
         begin
-          matched := GetSWMV(swMatrixPtr, l1, i - 1, j - 1) + InlineMatch(seq1^[i], seq2^[j], diffChar);
-          deleted := GetSWMV(swMatrixPtr, l1, i - 1, j) + gap_penalty;
-          inserted := GetSWMV(swMatrixPtr, l1, i, j - 1) + gap_penalty;
-          SetSWMV(swMatrixPtr, l1, i, j, GetMax(matched, GetMax(deleted, inserted)));
+          matched := GetSWMV(swMatrixPtr, L1, i - 1, j - 1) + InlineMatch(seq1^[i], seq2^[j], diffChar);
+          deleted := GetSWMV(swMatrixPtr, L1, i - 1, j) + gap_penalty;
+          inserted := GetSWMV(swMatrixPtr, L1, i, j - 1) + gap_penalty;
+          SetSWMV(swMatrixPtr, L1, i, j, GetMax(matched, GetMax(deleted, inserted)));
           inc(j);
         end;
       inc(i);
     end;
 
   { compute align }
-  i := l1;
+  i := L1;
   j := l2;
   align1 := '';
   align2 := '';
   identity := 0;
   while (i > 0) and (j > 0) do
     begin
-      score_current := GetSWMV(swMatrixPtr, l1, i, j);
-      score_diagonal := GetSWMV(swMatrixPtr, l1, i - 1, j - 1);
-      score_left := GetSWMV(swMatrixPtr, l1, i - 1, j);
-      score_right := GetSWMV(swMatrixPtr, l1, i, j - 1);
+      score_current := GetSWMV(swMatrixPtr, L1, i, j);
+      score_diagonal := GetSWMV(swMatrixPtr, L1, i - 1, j - 1);
+      score_left := GetSWMV(swMatrixPtr, L1, i - 1, j);
+      score_right := GetSWMV(swMatrixPtr, L1, i, j - 1);
 
       matched := InlineMatch(seq1^[i], seq2^[j], diffChar);
 
@@ -633,7 +637,7 @@ begin
           dec(j);
         end
       else
-          raise exception.Create('matrix error'); // matrix debug time
+          raise Exception.Create('matrix error'); // matrix debug time
     end;
 
   System.FreeMemory(swMatrixPtr);
@@ -667,10 +671,20 @@ begin
   diff2 := align2.Invert;
 end;
 
+function SmithWatermanCompare(const seq1, seq2: PPascalString; var diff1, diff2: TPascalString): Double;
+begin
+  Result := SmithWatermanCompare(seq1, seq2, diff1, diff2, False, '-');
+end;
+
 function SmithWatermanCompare(const seq1, seq2: TPascalString; var diff1, diff2: TPascalString;
   const NoDiffChar: Boolean; const diffChar: SystemChar): Double;
 begin
   Result := SmithWatermanCompare(@seq1, @seq2, diff1, diff2, NoDiffChar, diffChar);
+end;
+
+function SmithWatermanCompare(const seq1, seq2: TPascalString; var diff1, diff2: TPascalString): Double;
+begin
+  Result := SmithWatermanCompare(seq1, seq2, diff1, diff2, False, '-');
 end;
 
 function SmithWatermanCompare(const seq1, seq2: PPascalString; out Same, Diff: Integer): Double;
@@ -690,24 +704,24 @@ function SmithWatermanCompare(const seq1, seq2: PPascalString; out Same, Diff: I
 
 var
   swMatrixPtr: Pointer;
-  i, j, l1, l2: NativeInt;
+  i, j, L1, l2: NativeInt;
   matched, deleted, inserted: NativeInt;
   score_current, score_diagonal, score_left, score_right: NativeInt;
-  identity, l: NativeInt;
+  identity, L: NativeInt;
 begin
-  l1 := seq1^.Len;
+  L1 := seq1^.Len;
   l2 := seq2^.Len;
 
-  if (l1 = 0) or (l2 = 0) or (l1 > MaxSmithWatermanMatrix) or (l2 > MaxSmithWatermanMatrix) then
+  if (L1 = 0) or (l2 = 0) or (L1 > MaxSmithWatermanMatrix) or (l2 > MaxSmithWatermanMatrix) then
     begin
       Result := -1;
       Same := 0;
-      Diff := l1 + l2;
+      Diff := L1 + l2;
       Exit;
     end;
 
   { fast build matrix }
-  swMatrixPtr := GetSWMVMemory(l1, l2);
+  swMatrixPtr := GetSWMVMemory(L1, l2);
   if swMatrixPtr = nil then
     begin
       Result := -1;
@@ -715,46 +729,46 @@ begin
     end;
 
   i := 0;
-  while i <= l1 do
+  while i <= L1 do
     begin
-      SetSWMV(swMatrixPtr, l1, i, 0, gap_penalty * i);
+      SetSWMV(swMatrixPtr, L1, i, 0, gap_penalty * i);
       inc(i);
     end;
 
   j := 0;
   while j <= l2 do
     begin
-      SetSWMV(swMatrixPtr, l1, 0, j, gap_penalty * j);
+      SetSWMV(swMatrixPtr, L1, 0, j, gap_penalty * j);
       inc(j);
     end;
 
   { compute matrix }
   i := 1;
-  while i <= l1 do
+  while i <= L1 do
     begin
       j := 1;
       while j <= l2 do
         begin
-          matched := GetSWMV(swMatrixPtr, l1, i - 1, j - 1) + InlineMatch(seq1^[i], seq2^[j]);
-          deleted := GetSWMV(swMatrixPtr, l1, i - 1, j) + gap_penalty;
-          inserted := GetSWMV(swMatrixPtr, l1, i, j - 1) + gap_penalty;
-          SetSWMV(swMatrixPtr, l1, i, j, GetMax(matched, GetMax(deleted, inserted)));
+          matched := GetSWMV(swMatrixPtr, L1, i - 1, j - 1) + InlineMatch(seq1^[i], seq2^[j]);
+          deleted := GetSWMV(swMatrixPtr, L1, i - 1, j) + gap_penalty;
+          inserted := GetSWMV(swMatrixPtr, L1, i, j - 1) + gap_penalty;
+          SetSWMV(swMatrixPtr, L1, i, j, GetMax(matched, GetMax(deleted, inserted)));
           inc(j);
         end;
       inc(i);
     end;
 
   { compute align }
-  i := l1;
+  i := L1;
   j := l2;
   identity := 0;
-  l := 0;
+  L := 0;
   while (i > 0) and (j > 0) do
     begin
-      score_current := GetSWMV(swMatrixPtr, l1, i, j);
-      score_diagonal := GetSWMV(swMatrixPtr, l1, i - 1, j - 1);
-      score_left := GetSWMV(swMatrixPtr, l1, i - 1, j);
-      score_right := GetSWMV(swMatrixPtr, l1, i, j - 1);
+      score_current := GetSWMV(swMatrixPtr, L1, i, j);
+      score_diagonal := GetSWMV(swMatrixPtr, L1, i - 1, j - 1);
+      score_left := GetSWMV(swMatrixPtr, L1, i - 1, j);
+      score_right := GetSWMV(swMatrixPtr, L1, i, j - 1);
       matched := InlineMatch(seq1^[i], seq2^[j]);
 
       if score_current = score_diagonal + matched then
@@ -762,37 +776,37 @@ begin
           if matched = SmithWaterman_MatchOk then
               inc(identity);
 
-          inc(l);
+          inc(L);
           dec(i);
           dec(j);
         end
       else if score_current = score_left + gap_penalty then
         begin
-          inc(l);
+          inc(L);
           dec(i);
         end
       else if score_current = score_right + gap_penalty then
         begin
-          inc(l);
+          inc(L);
           dec(j);
         end
       else
-          raise exception.Create('matrix error'); // matrix debug time
+          raise Exception.Create('matrix error'); // matrix debug time
     end;
 
   System.FreeMemory(swMatrixPtr);
 
   if identity > 0 then
     begin
-      Result := identity / (l + i + j);
+      Result := identity / (L + i + j);
       Same := identity;
-      Diff := (l + i + j) - identity;
+      Diff := (L + i + j) - identity;
     end
   else
     begin
       Result := -1;
       Same := 0;
-      Diff := l + i + j;
+      Diff := L + i + j;
     end;
 end;
 
@@ -814,7 +828,7 @@ var
   r: Double;
 begin
   Result := -1;
-  for i := 0 to Length(seq1) - 1 do
+  for i := 0 to length(seq1) - 1 do
     begin
       r := SmithWatermanCompare(seq1[i], seq2);
       if r > Result then
@@ -835,24 +849,24 @@ function SmithWatermanCompare(const seq1: Pointer; siz1: Integer; const seq2: Po
 
 var
   swMatrixPtr: Pointer;
-  i, j, l1, l2: NativeInt;
+  i, j, L1, l2: NativeInt;
   matched, deleted, inserted: NativeInt;
   score_current, score_diagonal, score_left, score_right: NativeInt;
-  identity, l: NativeInt;
+  identity, L: NativeInt;
 begin
-  l1 := siz1;
+  L1 := siz1;
   l2 := siz2;
 
-  if (l1 = 0) or (l2 = 0) or (l1 > MaxSmithWatermanMatrix) or (l2 > MaxSmithWatermanMatrix) then
+  if (L1 = 0) or (l2 = 0) or (L1 > MaxSmithWatermanMatrix) or (l2 > MaxSmithWatermanMatrix) then
     begin
       Result := -1;
       Same := 0;
-      Diff := l1 + l2;
+      Diff := L1 + l2;
       Exit;
     end;
 
   { fast build matrix }
-  swMatrixPtr := GetSWMVMemory(l1, l2);
+  swMatrixPtr := GetSWMVMemory(L1, l2);
   if swMatrixPtr = nil then
     begin
       Result := -1;
@@ -860,84 +874,84 @@ begin
     end;
 
   i := 0;
-  while i <= l1 do
+  while i <= L1 do
     begin
-      SetSWMV(swMatrixPtr, l1, i, 0, gap_penalty * i);
+      SetSWMV(swMatrixPtr, L1, i, 0, gap_penalty * i);
       inc(i);
     end;
 
   j := 0;
   while j <= l2 do
     begin
-      SetSWMV(swMatrixPtr, l1, 0, j, gap_penalty * j);
+      SetSWMV(swMatrixPtr, L1, 0, j, gap_penalty * j);
       inc(j);
     end;
 
   { compute matrix }
   i := 1;
-  while i <= l1 do
+  while i <= L1 do
     begin
       j := 1;
       while j <= l2 do
         begin
-          matched := GetSWMV(swMatrixPtr, l1, i - 1, j - 1) + InlineMatch(PByte(NativeUInt(seq1) + (i - 1))^, PByte(NativeUInt(seq2) + (j - 1))^);
-          deleted := GetSWMV(swMatrixPtr, l1, i - 1, j) + gap_penalty;
-          inserted := GetSWMV(swMatrixPtr, l1, i, j - 1) + gap_penalty;
-          SetSWMV(swMatrixPtr, l1, i, j, GetMax(matched, GetMax(deleted, inserted)));
+          matched := GetSWMV(swMatrixPtr, L1, i - 1, j - 1) + InlineMatch(PByte(nativeUInt(seq1) + (i - 1))^, PByte(nativeUInt(seq2) + (j - 1))^);
+          deleted := GetSWMV(swMatrixPtr, L1, i - 1, j) + gap_penalty;
+          inserted := GetSWMV(swMatrixPtr, L1, i, j - 1) + gap_penalty;
+          SetSWMV(swMatrixPtr, L1, i, j, GetMax(matched, GetMax(deleted, inserted)));
           inc(j);
         end;
       inc(i);
     end;
 
   { compute align }
-  i := l1;
+  i := L1;
   j := l2;
   identity := 0;
-  l := 0;
+  L := 0;
   while (i > 0) and (j > 0) do
     begin
-      score_current := GetSWMV(swMatrixPtr, l1, i, j);
-      score_diagonal := GetSWMV(swMatrixPtr, l1, i - 1, j - 1);
-      score_left := GetSWMV(swMatrixPtr, l1, i - 1, j);
-      score_right := GetSWMV(swMatrixPtr, l1, i, j - 1);
-      matched := InlineMatch(PByte(NativeUInt(seq1) + (i - 1))^, PByte(NativeUInt(seq2) + (j - 1))^);
+      score_current := GetSWMV(swMatrixPtr, L1, i, j);
+      score_diagonal := GetSWMV(swMatrixPtr, L1, i - 1, j - 1);
+      score_left := GetSWMV(swMatrixPtr, L1, i - 1, j);
+      score_right := GetSWMV(swMatrixPtr, L1, i, j - 1);
+      matched := InlineMatch(PByte(nativeUInt(seq1) + (i - 1))^, PByte(nativeUInt(seq2) + (j - 1))^);
 
       if score_current = score_diagonal + matched then
         begin
           if matched = SmithWaterman_MatchOk then
               inc(identity);
 
-          inc(l);
+          inc(L);
           dec(i);
           dec(j);
         end
       else if score_current = score_left + gap_penalty then
         begin
-          inc(l);
+          inc(L);
           dec(i);
         end
       else if score_current = score_right + gap_penalty then
         begin
-          inc(l);
+          inc(L);
           dec(j);
         end
       else
-          raise exception.Create('matrix error'); // matrix debug time
+          raise Exception.Create('matrix error'); // matrix debug time
     end;
 
   System.FreeMemory(swMatrixPtr);
 
   if identity > 0 then
     begin
-      Result := identity / (l + i + j);
+      Result := identity / (L + i + j);
       Same := identity;
-      Diff := (l + i + j) - identity;
+      Diff := (L + i + j) - identity;
     end
   else
     begin
       Result := -1;
       Same := 0;
-      Diff := l + i + j;
+      Diff := L + i + j;
     end;
 end;
 
@@ -952,20 +966,20 @@ function SmithWatermanCompareLongString(const t1, t2: TPascalString; const MinDi
 type
   PSRec = ^TSRec;
 
-  TSRec = packed record
+  TSRec = record
     s: TPascalString;
   end;
 
   procedure _FillText(psPtr: PPascalString; outLst: TCoreClassList);
   var
-    l, i: Integer;
+    L, i: Integer;
     n: TPascalString;
     p: PSRec;
   begin
-    l := psPtr^.Len;
+    L := psPtr^.Len;
     i := 1;
     n := '';
-    while i <= l do
+    while i <= L do
       begin
         if CharIn(psPtr^[i], [#13, #10]) then
           begin
@@ -979,7 +993,7 @@ type
               end;
             repeat
                 inc(i);
-            until (i > l) or (not CharIn(psPtr^[i], [#13, #10, #32, #9]));
+            until (i > L) or (not CharIn(psPtr^[i], [#13, #10, #32, #9]));
           end
         else
           begin
@@ -1025,35 +1039,35 @@ var
   var
     i: Integer;
   begin
-    for i := 0 to lst1.count - 1 do
-        dispose(PSRec(lst1[i]));
-    for i := 0 to lst2.count - 1 do
-        dispose(PSRec(lst2[i]));
-    disposeObject([lst1, lst2]);
+    for i := 0 to lst1.Count - 1 do
+        Dispose(PSRec(lst1[i]));
+    for i := 0 to lst2.Count - 1 do
+        Dispose(PSRec(lst2[i]));
+    DisposeObject([lst1, lst2]);
   end;
 
 var
   swMatrixPtr: Pointer;
-  i, j, l1, l2: NativeInt;
+  i, j, L1, l2: NativeInt;
   matched, deleted, inserted: NativeInt;
   score_current, score_diagonal, score_left, score_right: NativeInt;
   cSame, cDiff, TotalSame, TotalDiff: Integer;
 begin
   _Init;
-  l1 := lst1.count;
-  l2 := lst2.count;
+  L1 := lst1.Count;
+  l2 := lst2.Count;
 
-  if (l1 = 0) or (l2 = 0) or (l1 > MaxSmithWatermanMatrix) or (l2 > MaxSmithWatermanMatrix) then
+  if (L1 = 0) or (l2 = 0) or (L1 > MaxSmithWatermanMatrix) or (l2 > MaxSmithWatermanMatrix) then
     begin
       Result := -1;
       Same := 0;
-      Diff := l1 + l2;
+      Diff := L1 + l2;
       _Free;
       Exit;
     end;
 
   { fast build matrix }
-  swMatrixPtr := GetSWMVMemory(l1, l2);
+  swMatrixPtr := GetSWMVMemory(L1, l2);
   if swMatrixPtr = nil then
     begin
       Result := -1;
@@ -1062,46 +1076,46 @@ begin
     end;
 
   i := 0;
-  while i <= l1 do
+  while i <= L1 do
     begin
-      SetSWMV(swMatrixPtr, l1, i, 0, gap_penalty * i);
+      SetSWMV(swMatrixPtr, L1, i, 0, gap_penalty * i);
       inc(i);
     end;
 
   j := 0;
   while j <= l2 do
     begin
-      SetSWMV(swMatrixPtr, l1, 0, j, gap_penalty * j);
+      SetSWMV(swMatrixPtr, L1, 0, j, gap_penalty * j);
       inc(j);
     end;
 
   { compute matrix }
   i := 1;
-  while i <= l1 do
+  while i <= L1 do
     begin
       j := 1;
       while j <= l2 do
         begin
-          matched := GetSWMV(swMatrixPtr, l1, i - 1, j - 1) + InlineMatch(PSRec(lst1[i - 1]), PSRec(lst2[j - 1]), MinDiffCharWithPeerLine, cSame, cDiff);
-          deleted := GetSWMV(swMatrixPtr, l1, i - 1, j) + gap_penalty;
-          inserted := GetSWMV(swMatrixPtr, l1, i, j - 1) + gap_penalty;
-          SetSWMV(swMatrixPtr, l1, i, j, GetMax(matched, GetMax(deleted, inserted)));
+          matched := GetSWMV(swMatrixPtr, L1, i - 1, j - 1) + InlineMatch(PSRec(lst1[i - 1]), PSRec(lst2[j - 1]), MinDiffCharWithPeerLine, cSame, cDiff);
+          deleted := GetSWMV(swMatrixPtr, L1, i - 1, j) + gap_penalty;
+          inserted := GetSWMV(swMatrixPtr, L1, i, j - 1) + gap_penalty;
+          SetSWMV(swMatrixPtr, L1, i, j, GetMax(matched, GetMax(deleted, inserted)));
           inc(j);
         end;
       inc(i);
     end;
 
   { compute align }
-  i := l1;
+  i := L1;
   j := l2;
   TotalSame := 0;
   TotalDiff := 0;
   while (i > 0) and (j > 0) do
     begin
-      score_current := GetSWMV(swMatrixPtr, l1, i, j);
-      score_diagonal := GetSWMV(swMatrixPtr, l1, i - 1, j - 1);
-      score_left := GetSWMV(swMatrixPtr, l1, i - 1, j);
-      score_right := GetSWMV(swMatrixPtr, l1, i, j - 1);
+      score_current := GetSWMV(swMatrixPtr, L1, i, j);
+      score_diagonal := GetSWMV(swMatrixPtr, L1, i - 1, j - 1);
+      score_left := GetSWMV(swMatrixPtr, L1, i - 1, j);
+      score_right := GetSWMV(swMatrixPtr, L1, i, j - 1);
       matched := InlineMatch(PSRec(lst1[i - 1]), PSRec(lst2[j - 1]), MinDiffCharWithPeerLine, cSame, cDiff);
 
       inc(TotalSame, cSame);
@@ -1121,7 +1135,7 @@ begin
           dec(j);
         end
       else
-          raise exception.Create('matrix error'); // matrix debug time
+          raise Exception.Create('matrix error'); // matrix debug time
     end;
 
   System.FreeMemory(swMatrixPtr);
@@ -1206,59 +1220,59 @@ begin
   r := s.Text;
 end;
 
-operator = (const A: TPascalString; const B: TPascalString): Boolean;
+operator = (const a: TPascalString; const b: TPascalString): Boolean;
 begin
-  Result := A.Text = B.Text;
+  Result := a.Text = b.Text;
 end;
 
-operator <> (const A: TPascalString; const B: TPascalString): Boolean;
+operator <> (const a: TPascalString; const b: TPascalString): Boolean;
 begin
-  Result := A.Text <> B.Text;
+  Result := a.Text <> b.Text;
 end;
 
-operator > (const A: TPascalString; const B: TPascalString): Boolean;
+operator > (const a: TPascalString; const b: TPascalString): Boolean;
 begin
-  Result := A.Text > B.Text;
+  Result := a.Text > b.Text;
 end;
 
-operator >= (const A: TPascalString; const B: TPascalString): Boolean;
+operator >= (const a: TPascalString; const b: TPascalString): Boolean;
 begin
-  Result := A.Text >= B.Text;
+  Result := a.Text >= b.Text;
 end;
 
-operator < (const A: TPascalString; const B: TPascalString): Boolean;
+operator < (const a: TPascalString; const b: TPascalString): Boolean;
 begin
-  Result := A.Text < B.Text;
+  Result := a.Text < b.Text;
 end;
 
-operator <= (const A: TPascalString; const B: TPascalString): Boolean;
+operator <= (const a: TPascalString; const b: TPascalString): Boolean;
 begin
-  Result := A.Text <= B.Text;
+  Result := a.Text <= b.Text;
 end;
 
-operator + (const A: TPascalString; const B: TPascalString): TPascalString;
+operator + (const a: TPascalString; const b: TPascalString): TPascalString;
 begin
-  CombineCharsPP(A.Buff, B.Buff, Result.Buff);
+  CombineCharsPP(a.buff, b.buff, Result.buff);
 end;
 
-operator + (const A: TPascalString; const B: SystemString): TPascalString;
+operator + (const a: TPascalString; const b: SystemString): TPascalString;
 begin
-  CombineCharsPS(A.Buff, B, Result.Buff);
+  CombineCharsPS(a.buff, b, Result.buff);
 end;
 
-operator + (const A: SystemString; const B: TPascalString): TPascalString;
+operator + (const a: SystemString; const b: TPascalString): TPascalString;
 begin
-  CombineCharsSP(A, B.Buff, Result.Buff);
+  CombineCharsSP(a, b.buff, Result.buff);
 end;
 
-operator + (const A: TPascalString; const B: SystemChar): TPascalString;
+operator + (const a: TPascalString; const b: SystemChar): TPascalString;
 begin
-  CombineCharsPC(A.Buff, B, Result.Buff);
+  CombineCharsPC(a.buff, b, Result.buff);
 end;
 
-operator + (const A: SystemChar; const B: TPascalString): TPascalString;
+operator + (const a: SystemChar; const b: TPascalString): TPascalString;
 begin
-  CombineCharsCP(A, B.Buff, Result.Buff);
+  CombineCharsCP(a, b.buff, Result.buff);
 end;
 
 {$ENDIF}
@@ -1266,79 +1280,79 @@ end;
 
 function TPascalString.GetText: SystemString;
 begin
-  SetLength(Result, Length(Buff));
-  if Length(Buff) > 0 then
-      CopyPtr(@Buff[0], @Result[FirstCharPos], Length(Buff) * SystemCharSize);
+  SetLength(Result, length(buff));
+  if length(buff) > 0 then
+      CopyPtr(@buff[0], @Result[FirstCharPos], length(buff) * SystemCharSize);
 end;
 
 procedure TPascalString.SetText(const Value: SystemString);
 begin
-  SetLength(Buff, Length(Value));
+  SetLength(buff, length(Value));
 
-  if Length(Buff) > 0 then
-      CopyPtr(@Value[FirstCharPos], @Buff[0], Length(Buff) * SystemCharSize);
+  if length(buff) > 0 then
+      CopyPtr(@Value[FirstCharPos], @buff[0], length(buff) * SystemCharSize);
 end;
 
 function TPascalString.GetLen: Integer;
 begin
-  Result := Length(Buff);
+  Result := length(buff);
 end;
 
 procedure TPascalString.SetLen(const Value: Integer);
 begin
-  SetLength(Buff, Value);
+  SetLength(buff, Value);
 end;
 
 function TPascalString.GetChars(index: Integer): SystemChar;
 begin
-  if (index > Length(Buff)) or (index <= 0) then
+  if (index > length(buff)) or (index <= 0) then
       Result := #0
   else
-      Result := Buff[index - 1];
+      Result := buff[index - 1];
 end;
 
 procedure TPascalString.SetChars(index: Integer; const Value: SystemChar);
 begin
-  Buff[index - 1] := Value;
+  buff[index - 1] := Value;
 end;
 
 procedure TPascalString.SetBytes(const Value: TBytes);
 begin
-  SetLength(Buff, 0);
+  SetLength(buff, 0);
   try
       Text := SysUtils.TEncoding.UTF8.GetString(Value);
   except
-      SetLength(Buff, 0);
+      SetLength(buff, 0);
   end;
 end;
 
 function TPascalString.GetBytes: TBytes;
 begin
-  {$IFDEF FPC}
+{$IFDEF FPC}
   Result := SysUtils.TEncoding.UTF8.GetBytes(Text);
-  {$ELSE}
-  Result := SysUtils.TEncoding.UTF8.GetBytes(Buff);
-  {$ENDIF}
+{$ELSE}
+  Result := SysUtils.TEncoding.UTF8.GetBytes(buff);
+{$ENDIF}
 end;
 
 function TPascalString.GetLast: SystemChar;
 begin
-  Result := Buff[Length(Buff) - 1];
+  Result := buff[length(buff) - 1];
 end;
 
 procedure TPascalString.SetLast(const Value: SystemChar);
 begin
-  Buff[Length(Buff) - 1] := Value;
+  buff[length(buff) - 1] := Value;
 end;
 
 function TPascalString.GetFirst: SystemChar;
 begin
-  Result := Buff[0];
+  Result := buff[0];
 end;
 
 procedure TPascalString.SetFirst(const Value: SystemChar);
 begin
-  Buff[0] := Value;
+  buff[0] := Value;
 end;
 
 {$IFDEF DELPHI}
@@ -1376,27 +1390,27 @@ end;
 
 class operator TPascalString.Add(const Lhs, Rhs: TPascalString): TPascalString;
 begin
-  CombineCharsPP(Lhs.Buff, Rhs.Buff, Result.Buff);
+  CombineCharsPP(Lhs.buff, Rhs.buff, Result.buff);
 end;
 
 class operator TPascalString.Add(const Lhs: SystemString; const Rhs: TPascalString): TPascalString;
 begin
-  CombineCharsSP(Lhs, Rhs.Buff, Result.Buff);
+  CombineCharsSP(Lhs, Rhs.buff, Result.buff);
 end;
 
 class operator TPascalString.Add(const Lhs: TPascalString; const Rhs: SystemString): TPascalString;
 begin
-  CombineCharsPS(Lhs.Buff, Rhs, Result.Buff);
+  CombineCharsPS(Lhs.buff, Rhs, Result.buff);
 end;
 
 class operator TPascalString.Add(const Lhs: SystemChar; const Rhs: TPascalString): TPascalString;
 begin
-  CombineCharsCP(Lhs, Rhs.Buff, Result.Buff);
+  CombineCharsCP(Lhs, Rhs.buff, Result.buff);
 end;
 
 class operator TPascalString.Add(const Lhs: TPascalString; const Rhs: SystemChar): TPascalString;
 begin
-  CombineCharsPC(Lhs.Buff, Rhs, Result.Buff);
+  CombineCharsPC(Lhs.buff, Rhs, Result.buff);
 end;
 
 class operator TPascalString.Implicit(Value: Variant): TPascalString;
@@ -1412,7 +1426,7 @@ end;
 class operator TPascalString.Implicit(Value: SystemChar): TPascalString;
 begin
   Result.Len := 1;
-  Result.Buff[0] := Value;
+  Result.buff[0] := Value;
 end;
 
 class operator TPascalString.Implicit(Value: TPascalString): SystemString;
@@ -1448,24 +1462,24 @@ end;
 class operator TPascalString.Explicit(Value: SystemChar): TPascalString;
 begin
   Result.Len := 1;
-  Result.Buff[0] := Value;
+  Result.buff[0] := Value;
 end;
 
 {$ENDIF}
 
 
-function TPascalString.copy(index, count: NativeInt): TPascalString;
+function TPascalString.Copy(index, Count: NativeInt): TPascalString;
 var
-  l: NativeInt;
+  L: NativeInt;
 begin
-  l := Length(Buff);
+  L := length(buff);
 
-  if (index - 1) + count > l then
-      count := l - (index - 1);
+  if (index - 1) + Count > L then
+      Count := L - (index - 1);
 
-  SetLength(Result.Buff, count);
-  if count > 0 then
-      CopyPtr(@Buff[index - 1], @Result.Buff[0], SystemCharSize * count);
+  SetLength(Result.buff, Count);
+  if Count > 0 then
+      CopyPtr(@buff[index - 1], @Result.buff[0], SystemCharSize * Count);
 end;
 
 function TPascalString.Same(const p: PPascalString): Boolean;
@@ -1478,10 +1492,10 @@ begin
       Exit;
   for i := 0 to Len - 1 do
     begin
-      s := Buff[i];
+      s := buff[i];
       if CharIn(s, cHiAtoZ) then
           inc(s, 32);
-      d := p^.Buff[i];
+      d := p^.buff[i];
       if CharIn(d, cHiAtoZ) then
           inc(d, 32);
       if s <> d then
@@ -1499,15 +1513,35 @@ begin
       Exit;
   for i := 0 to Len - 1 do
     begin
-      s := Buff[i];
+      s := buff[i];
       if CharIn(s, cHiAtoZ) then
           inc(s, 32);
-      d := t.Buff[i];
+      d := t.buff[i];
       if CharIn(d, cHiAtoZ) then
           inc(d, 32);
       if s <> d then
           Exit(False);
     end;
+end;
+
+function TPascalString.Same(const t1, t2: TPascalString): Boolean;
+begin
+  Result := Same(@t1) or Same(@t2);
+end;
+
+function TPascalString.Same(const t1, t2, t3: TPascalString): Boolean;
+begin
+  Result := Same(@t1) or Same(@t2) or Same(@t3);
+end;
+
+function TPascalString.Same(const t1, t2, t3, t4: TPascalString): Boolean;
+begin
+  Result := Same(@t1) or Same(@t2) or Same(@t3) or Same(@t4);
+end;
+
+function TPascalString.Same(const t1, t2, t3, t4, t5: TPascalString): Boolean;
+begin
+  Result := Same(@t1) or Same(@t2) or Same(@t3) or Same(@t4) or Same(@t5);
 end;
 
 function TPascalString.Same(const IgnoreCase: Boolean; const t: TPascalString): Boolean;
@@ -1520,13 +1554,12 @@ begin
       Exit;
   for i := 0 to Len - 1 do
     begin
-
-      s := Buff[i];
+      s := buff[i];
       if IgnoreCase then
         if CharIn(s, cHiAtoZ) then
             inc(s, 32);
 
-      d := t.Buff[i];
+      d := t.buff[i];
       if IgnoreCase then
         if CharIn(d, cHiAtoZ) then
             inc(d, 32);
@@ -1538,15 +1571,15 @@ end;
 
 function TPascalString.ComparePos(const Offset: Integer; const p: PPascalString): Boolean;
 var
-  i, l: Integer;
+  i, L: Integer;
   sourChar, destChar: SystemChar;
 begin
   Result := False;
   i := 1;
-  l := p^.Len;
-  if (Offset + l - 1) > Len then
+  L := p^.Len;
+  if (Offset + L - 1) > Len then
       Exit;
-  while i <= l do
+  while i <= L do
     begin
       sourChar := GetChars(Offset + i - 1);
       destChar := p^[i];
@@ -1565,15 +1598,15 @@ end;
 
 function TPascalString.ComparePos(const Offset: Integer; const t: TPascalString): Boolean;
 var
-  i, l: Integer;
+  i, L: Integer;
   sourChar, destChar: SystemChar;
 begin
   Result := False;
   i := 1;
-  l := t.Len;
-  if (Offset + l) > Len then
+  L := t.Len;
+  if (Offset + L) > Len then
       Exit;
-  while i <= l do
+  while i <= L do
     begin
       sourChar := GetChars(Offset + i - 1);
       destChar := t[i];
@@ -1616,8 +1649,8 @@ function TPascalString.Exists(c: SystemChar): Boolean;
 var
   i: Integer;
 begin
-  for i := low(Buff) to high(Buff) do
-    if Buff[i] = c then
+  for i := low(buff) to high(buff) do
+    if buff[i] = c then
         Exit(True);
   Result := False;
 end;
@@ -1626,8 +1659,8 @@ function TPascalString.Exists(c: array of SystemChar): Boolean;
 var
   i: Integer;
 begin
-  for i := low(Buff) to high(Buff) do
-    if CharIn(Buff[i], c) then
+  for i := low(buff) to high(buff) do
+    if CharIn(buff[i], c) then
         Exit(True);
   Result := False;
 end;
@@ -1642,31 +1675,31 @@ var
   i: Integer;
 begin
   Result := 0;
-  for i := low(Buff) to high(Buff) do
-    if CharIn(Buff[i], c) then
+  for i := low(buff) to high(buff) do
+    if CharIn(buff[i], c) then
         inc(Result);
 end;
 
-function TPascalString.Hash: THash;
+function TPascalString.hash: THash;
 begin
-  Result := FastHashPascalString(@Self);
+  Result := FastHashPPascalString(@Self);
 end;
 
 function TPascalString.Hash64: THash64;
 begin
-  Result := FastHash64PascalString(@Self);
+  Result := FastHash64PPascalString(@Self);
 end;
 
 procedure TPascalString.DeleteLast;
 begin
   if Len > 0 then
-      SetLength(Buff, Length(Buff) - 1);
+      SetLength(buff, length(buff) - 1);
 end;
 
 procedure TPascalString.DeleteFirst;
 begin
   if Len > 0 then
-      Buff := System.copy(Buff, 1, Len);
+      buff := System.Copy(buff, 1, Len);
 end;
 
 procedure TPascalString.Delete(idx, cnt: Integer);
@@ -1679,34 +1712,34 @@ end;
 
 procedure TPascalString.Clear;
 begin
-  SetLength(Buff, 0);
+  SetLength(buff, 0);
 end;
 
 procedure TPascalString.Append(t: TPascalString);
 var
-  r, l: Integer;
+  r, L: Integer;
 begin
-  l := Length(t.Buff);
-  if l > 0 then
+  L := length(t.buff);
+  if L > 0 then
     begin
-      r := Length(Buff);
-      SetLength(Buff, r + l);
-      CopyPtr(@t.Buff[0], @Buff[r], l * SystemCharSize);
+      r := length(buff);
+      SetLength(buff, r + L);
+      CopyPtr(@t.buff[0], @buff[r], L * SystemCharSize);
     end;
 end;
 
 procedure TPascalString.Append(c: SystemChar);
 begin
-  SetLength(Buff, Length(Buff) + 1);
-  Buff[Length(Buff) - 1] := c;
+  SetLength(buff, length(buff) + 1);
+  buff[length(buff) - 1] := c;
 end;
 
 function TPascalString.GetString(bPos, ePos: NativeInt): TPascalString;
 begin
-  if ePos > Length(Buff) then
-      Result := Self.copy(bPos, Length(Buff) - bPos + 1)
+  if ePos > length(buff) then
+      Result := Self.Copy(bPos, length(buff) - bPos + 1)
   else
-      Result := Self.copy(bPos, (ePos - bPos));
+      Result := Self.Copy(bPos, (ePos - bPos));
 end;
 
 procedure TPascalString.Insert(AText: SystemString; idx: Integer);
@@ -1714,20 +1747,20 @@ begin
   Text := GetString(1, idx) + AText + GetString(idx + 1, Len);
 end;
 
-procedure TPascalString.FastAsText(var Output: SystemString);
+procedure TPascalString.FastAsText(var output: SystemString);
 begin
-  SetLength(Output, Length(Buff));
-  if Length(Buff) > 0 then
-      CopyPtr(@Buff[0], @Output[FirstCharPos], Length(Buff) * SystemCharSize);
+  SetLength(output, length(buff));
+  if length(buff) > 0 then
+      CopyPtr(@buff[0], @output[FirstCharPos], length(buff) * SystemCharSize);
 end;
 
-procedure TPascalString.FastGetBytes(var Output: TBytes);
+procedure TPascalString.FastGetBytes(var output: TBytes);
 begin
-  {$IFDEF FPC}
-  Output := SysUtils.TEncoding.UTF8.GetBytes(Text);
-  {$ELSE}
-  Output := SysUtils.TEncoding.UTF8.GetBytes(Buff);
-  {$ENDIF}
+{$IFDEF FPC}
+  output := SysUtils.TEncoding.UTF8.GetBytes(Text);
+{$ELSE}
+  output := SysUtils.TEncoding.UTF8.GetBytes(buff);
+{$ENDIF}
 end;
 
 function TPascalString.LowerText: SystemString;
@@ -1744,107 +1777,107 @@ function TPascalString.Invert: TPascalString;
 var
   i, j: Integer;
 begin
-  SetLength(Result.Buff, Length(Buff));
-  j := low(Result.Buff);
-  for i := high(Buff) downto low(Buff) do
+  SetLength(Result.buff, length(buff));
+  j := low(Result.buff);
+  for i := high(buff) downto low(buff) do
     begin
-      Result.Buff[j] := Buff[i];
+      Result.buff[j] := buff[i];
       inc(j);
     end;
 end;
 
-function TPascalString.TrimChar(const charS: TPascalString): TPascalString;
+function TPascalString.TrimChar(const Chars: TPascalString): TPascalString;
 var
-  l, bp, ep: Integer;
+  L, bp, EP: Integer;
 begin
   Result := '';
-  l := Len;
-  if l > 0 then
+  L := Len;
+  if L > 0 then
     begin
       bp := 1;
-      while CharIn(GetChars(bp), @charS) do
+      while CharIn(GetChars(bp), @Chars) do
         begin
           inc(bp);
-          if (bp > l) then
+          if (bp > L) then
             begin
               Result := '';
               Exit;
             end;
         end;
-      if bp > l then
+      if bp > L then
           Result := ''
       else
         begin
-          ep := l;
+          EP := L;
 
-          while CharIn(GetChars(ep), @charS) do
+          while CharIn(GetChars(EP), @Chars) do
             begin
-              dec(ep);
-              if (ep < 1) then
+              dec(EP);
+              if (EP < 1) then
                 begin
                   Result := '';
                   Exit;
                 end;
             end;
-          Result := GetString(bp, ep + 1);
+          Result := GetString(bp, EP + 1);
         end;
     end;
 end;
 
-function TPascalString.DeleteChar(const charS: TPascalString): TPascalString;
+function TPascalString.DeleteChar(const Chars: TPascalString): TPascalString;
 var
   c: SystemChar;
 begin
   Result := '';
-  for c in Buff do
-    if not CharIn(c, @charS) then
+  for c in buff do
+    if not CharIn(c, @Chars) then
         Result.Append(c);
 end;
 
-function TPascalString.DeleteChar(const charS: TOrdChars): TPascalString;
+function TPascalString.DeleteChar(const Chars: TOrdChars): TPascalString;
 var
   c: SystemChar;
 begin
   Result := '';
-  for c in Buff do
-    if not CharIn(c, charS) then
+  for c in buff do
+    if not CharIn(c, Chars) then
         Result.Append(c);
 end;
 
-function TPascalString.ReplaceChar(const charS: TPascalString; const newChar: SystemChar): TPascalString;
+function TPascalString.ReplaceChar(const Chars: TPascalString; const newChar: SystemChar): TPascalString;
 var
   i: Integer;
 begin
   Result.Len := Len;
-  for i := low(Buff) to high(Buff) do
-    if CharIn(Buff[i], charS) then
-        Result.Buff[i] := newChar
+  for i := low(buff) to high(buff) do
+    if CharIn(buff[i], Chars) then
+        Result.buff[i] := newChar
     else
-        Result.Buff[i] := Buff[i];
+        Result.buff[i] := buff[i];
 end;
 
-function TPascalString.ReplaceChar(const charS, newChar: SystemChar): TPascalString;
+function TPascalString.ReplaceChar(const Chars, newChar: SystemChar): TPascalString;
 var
   i: Integer;
 begin
   Result.Len := Len;
-  for i := low(Buff) to high(Buff) do
-    if CharIn(Buff[i], charS) then
-        Result.Buff[i] := newChar
+  for i := low(buff) to high(buff) do
+    if CharIn(buff[i], Chars) then
+        Result.buff[i] := newChar
     else
-        Result.Buff[i] := Buff[i];
+        Result.buff[i] := buff[i];
 end;
 
-function TPascalString.ReplaceChar(const charS: TOrdChars; const newChar: SystemChar): TPascalString;
+function TPascalString.ReplaceChar(const Chars: TOrdChars; const newChar: SystemChar): TPascalString;
 var
   i: Integer;
 begin
   Result.Len := Len;
-  for i := low(Buff) to high(Buff) do
-    if CharIn(Buff[i], charS) then
-        Result.Buff[i] := newChar
+  for i := low(buff) to high(buff) do
+    if CharIn(buff[i], Chars) then
+        Result.buff[i] := newChar
     else
-        Result.Buff[i] := Buff[i];
+        Result.buff[i] := buff[i];
 end;
 
 function TPascalString.SmithWaterman(const p: PPascalString): Double;
@@ -1859,11 +1892,11 @@ end;
 
 function TPascalString.BOMBytes: TBytes;
 begin
-  {$IFDEF FPC}
+{$IFDEF FPC}
   Result := GetBytes;
-  {$ELSE}
+{$ELSE}
   Result := SysUtils.TEncoding.UTF8.GetPreamble + GetBytes;
-  {$ENDIF}
+{$ENDIF}
 end;
 
 initialization
@@ -1871,4 +1904,3 @@ initialization
 finalization
 
 end.
-
