@@ -1,5 +1,5 @@
 { ****************************************************************************** }
-{ * sound engine with FMX Support                                              * }
+{ * sound engine for FMX                                                       * }
 { * written by QQ 600585@qq.com                                                * }
 { * https://github.com/PassByYou888/CoreCipher                                 * }
 { * https://github.com/PassByYou888/ZServer4D                                  * }
@@ -9,7 +9,7 @@
 { ****************************************************************************** }
 unit zSound_FMX;
 
-{$INCLUDE ..\zDefine.inc}
+{$INCLUDE ..\..\zDefine.inc}
 
 interface
 

@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{17E7BE21-F6B6-4D8B-ADB7-384E2FCA0E91}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="多平台Bass音频接口Demo\zSoundWithBASS.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="多平台FMX音频接口Demo\zSoundWithFMX.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="zSoundWithBASS">
+        <MSBuild Projects="多平台Bass音频接口Demo\zSoundWithBASS.dproj"/>
+    </Target>
+    <Target Name="zSoundWithBASS:Clean">
+        <MSBuild Projects="多平台Bass音频接口Demo\zSoundWithBASS.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="zSoundWithBASS:Make">
+        <MSBuild Projects="多平台Bass音频接口Demo\zSoundWithBASS.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="zSoundWithFMX">
+        <MSBuild Projects="多平台FMX音频接口Demo\zSoundWithFMX.dproj"/>
+    </Target>
+    <Target Name="zSoundWithFMX:Clean">
+        <MSBuild Projects="多平台FMX音频接口Demo\zSoundWithFMX.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="zSoundWithFMX:Make">
+        <MSBuild Projects="多平台FMX音频接口Demo\zSoundWithFMX.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="zSoundWithBASS;zSoundWithFMX"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="zSoundWithBASS:Clean;zSoundWithFMX:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="zSoundWithBASS:Make;zSoundWithFMX:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

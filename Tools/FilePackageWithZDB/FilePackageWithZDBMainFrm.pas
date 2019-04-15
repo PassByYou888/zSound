@@ -5,9 +5,9 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,
-  ObjectDataManagerFrameUnit, MemoryStream64, LibraryManager, ObjectDataManager,
 
-  UnicodeMixedLib, CoreClasses, DoStatusIO, PascalStrings, CoreCipher;
+  ObjectDataManagerFrameUnit, MemoryStream64, LibraryManager, ObjectDataManager,
+  UnicodeMixedLib, CoreClasses, DoStatusIO, PascalStrings;
 
 type
   TFilePackageWithZDBMainForm = class(TForm, IMemoryStream64ReadWriteTrigger)
@@ -46,7 +46,7 @@ type
     procedure CompressAsButtonClick(Sender: TObject);
   private
     { Private declarations }
-    FDBEng     : TObjectDataManagerOfCache;
+    FDBEng: TObjectDataManagerOfCache;
     FDBManFrame: TObjectDataManagerFrame;
 
     FTotalRead, FTotalWrite: Int64;
@@ -57,6 +57,7 @@ type
     procedure TriggerRead64(Count: Int64);
   public
     { Public declarations }
+    procedure OpenFile(fileName: SystemString);
   end;
 
 var
@@ -83,10 +84,13 @@ begin
 
   FOpenFile := '';
 
-  FDBEng.Update;
+  FDBEng.Flush;
   FDBEng.StreamEngine.Position := 0;
 
   MD5Edit.Text := umlStreamMD5String(FDBEng.StreamEngine);
+
+  if ParamCount = 1 then
+      OpenFile(ParamStr(1));
 end;
 
 procedure TFilePackageWithZDBMainForm.FormDestroy(Sender: TObject);
@@ -101,15 +105,109 @@ begin
   CanClose := True;
 end;
 
+procedure TFilePackageWithZDBMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  Action := caFree;
+end;
+
+procedure TFilePackageWithZDBMainForm.NewButtonClick(Sender: TObject);
+begin
+  FTotalRead := 0;
+  FTotalWrite := 0;
+  FDBManFrame.ResourceData := nil;
+  DisposeObject(FDBEng);
+  FDBEng := TObjectDataManagerOfCache.CreateAsStream(TMemoryStream64OfReadWriteTrigger.Create(Self), '', ObjectDataMarshal.ID, False, True, True);
+  FDBManFrame.ResourceData := FDBEng;
+  FOpenFile := '';
+
+  FDBEng.Flush;
+  FDBEng.StreamEngine.Position := 0;
+  MD5Edit.Text := umlStreamMD5String(FDBEng.StreamEngine);
+  DoStatus('new DB');
+end;
+
+procedure TFilePackageWithZDBMainForm.OpenButtonClick(Sender: TObject);
+begin
+  if not OpenDialog.Execute then
+      Exit;
+
+  OpenFile(OpenDialog.fileName);
+end;
+
+procedure TFilePackageWithZDBMainForm.SaveButtonClick(Sender: TObject);
+var
+  stream: TFileStream;
+begin
+  if FOpenFile = '' then
+    if not SaveDialog.Execute then
+        Exit;
+
+  if FOpenFile = '' then
+    begin
+      FOpenFile := SaveDialog.fileName;
+    end;
+
+  stream := TFileStream.Create(FOpenFile, fmCreate);
+  try
+    FDBEng.SaveToStream(stream);
+
+    stream.Position := 0;
+    MD5Edit.Text := umlStreamMD5String(stream);
+
+  finally
+      DisposeObject(stream);
+  end;
+  DoStatus('save DB:%s', [FOpenFile.Text]);
+
+  Caption := PFormat('Package: %s', [umlGetFileName(FOpenFile).Text]);
+  Application.Title := PFormat('Package: %s', [umlGetFileName(FOpenFile).Text]);
+end;
+
+procedure TFilePackageWithZDBMainForm.SaveAsButtonClick(Sender: TObject);
+var
+  stream: TFileStream;
+begin
+  if not SaveDialog.Execute then
+      Exit;
+
+  FOpenFile := SaveDialog.fileName;
+
+  stream := TFileStream.Create(FOpenFile, fmCreate);
+  try
+    FDBEng.SaveToStream(stream);
+
+    stream.Position := 0;
+    MD5Edit.Text := umlStreamMD5String(stream);
+  finally
+      DisposeObject(stream);
+  end;
+  DoStatus('save DB:%s', [FOpenFile.Text]);
+
+  Caption := PFormat('Package: %s', [umlGetFileName(FOpenFile).Text]);
+  Application.Title := PFormat('Package: %s', [umlGetFileName(FOpenFile).Text]);
+end;
+
+procedure TFilePackageWithZDBMainForm.TimerTimer(Sender: TObject);
+begin
+  CacheStateMemo.Text := Format('File Size:%s IO Read:%s IO Write:%s',
+    [umlSizeToStr(FDBEng.Size).Text, umlSizeToStr(FTotalRead).Text, umlSizeToStr(FTotalWrite).Text]);
+end;
+
+procedure TFilePackageWithZDBMainForm.RecalcMD5ButtonClick(Sender: TObject);
+begin
+  MD5Edit.Text := umlStreamMD5String(FDBEng.StreamEngine);
+  DoStatus('recalc md5:%s', [MD5Edit.Text]);
+end;
+
 procedure TFilePackageWithZDBMainForm.CompressAsButtonClick(Sender: TObject);
 var
   m64, C64: TMemoryStream64;
-  fn      : string;
+  fn: string;
 begin
   if not SaveAsCompressedDialog.Execute then
       Exit;
 
-  fn := SaveAsCompressedDialog.FileName;
+  fn := SaveAsCompressedDialog.fileName;
 
   m64 := TMemoryStream64.Create;
   C64 := TMemoryStream64.Create;
@@ -134,35 +232,21 @@ begin
   Memo.Lines.Add(AText);
 end;
 
-procedure TFilePackageWithZDBMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
+procedure TFilePackageWithZDBMainForm.TriggerWrite64(Count: Int64);
 begin
-  Action := caFree;
+  Inc(FTotalWrite, Count);
 end;
 
-procedure TFilePackageWithZDBMainForm.NewButtonClick(Sender: TObject);
+procedure TFilePackageWithZDBMainForm.TriggerRead64(Count: Int64);
 begin
-  FTotalRead := 0;
-  FTotalWrite := 0;
-  FDBManFrame.ResourceData := nil;
-  DisposeObject(FDBEng);
-  FDBEng := TObjectDataManagerOfCache.CreateAsStream(TMemoryStream64OfReadWriteTrigger.Create(Self), '', ObjectDataMarshal.ID, False, True, True);
-  FDBManFrame.ResourceData := FDBEng;
-  FOpenFile := '';
-
-  FDBEng.Update;
-  FDBEng.StreamEngine.Position := 0;
-  MD5Edit.Text := umlStreamMD5String(FDBEng.StreamEngine);
-  DoStatus('new DB');
+  Inc(FTotalRead, Count);
 end;
 
-procedure TFilePackageWithZDBMainForm.OpenButtonClick(Sender: TObject);
+procedure TFilePackageWithZDBMainForm.OpenFile(fileName: SystemString);
 var
   m64, C64: TMemoryStream64;
 begin
-  if not OpenDialog.Execute then
-      Exit;
-
-  FOpenFile := OpenDialog.FileName;
+  FOpenFile := fileName;
 
   FDBManFrame.ResourceData := nil;
 
@@ -203,76 +287,9 @@ begin
   FDBManFrame.ResourceData := FDBEng;
 
   DoStatus('open DB:%s', [FOpenFile.Text]);
+
+  Caption := PFormat('Package: %s', [umlGetFileName(FOpenFile).Text]);
+  Application.Title := PFormat('Package: %s', [umlGetFileName(FOpenFile).Text]);
 end;
 
-procedure TFilePackageWithZDBMainForm.RecalcMD5ButtonClick(Sender: TObject);
-begin
-  MD5Edit.Text := umlStreamMD5String(FDBEng.StreamEngine);
-  DoStatus('recalc md5:%s', [MD5Edit.Text]);
-end;
-
-procedure TFilePackageWithZDBMainForm.SaveButtonClick(Sender: TObject);
-var
-  stream: TFileStream;
-begin
-  if FOpenFile = '' then
-    if not SaveDialog.Execute then
-        Exit;
-
-  if FOpenFile = '' then
-    begin
-      FOpenFile := SaveDialog.FileName;
-    end;
-
-  stream := TFileStream.Create(FOpenFile, fmCreate);
-  try
-    FDBEng.SaveToStream(stream);
-
-    stream.Position := 0;
-    MD5Edit.Text := umlStreamMD5String(stream);
-
-  finally
-      DisposeObject(stream);
-  end;
-  DoStatus('save DB:%s', [FOpenFile.Text]);
-end;
-
-procedure TFilePackageWithZDBMainForm.TimerTimer(Sender: TObject);
-begin
-  CacheStateMemo.Text := Format('cached header:%d field:%d item:%d block:%d' + #13#10 + 'File Size:%s IO Read:%s IO Write:%s',
-    [FDBEng.HeaderCache.Count, FDBEng.FieldCache.Count, FDBEng.ItemCache.Count, FDBEng.ItemBlockCache.Count,
-    umlSizeToStr(FDBEng.Size).Text, umlSizeToStr(FTotalRead).Text, umlSizeToStr(FTotalWrite).Text]);
-end;
-
-procedure TFilePackageWithZDBMainForm.TriggerRead64(Count: Int64);
-begin
-  Inc(FTotalRead, Count);
-end;
-
-procedure TFilePackageWithZDBMainForm.TriggerWrite64(Count: Int64);
-begin
-  Inc(FTotalWrite, Count);
-end;
-
-procedure TFilePackageWithZDBMainForm.SaveAsButtonClick(Sender: TObject);
-var
-  stream: TFileStream;
-begin
-  if not SaveDialog.Execute then
-      Exit;
-
-  FOpenFile := SaveDialog.FileName;
-
-  stream := TFileStream.Create(FOpenFile, fmCreate);
-  try
-    FDBEng.SaveToStream(stream);
-
-    stream.Position := 0;
-    MD5Edit.Text := umlStreamMD5String(stream);
-  finally
-      DisposeObject(stream);
-  end;
-  DoStatus('save DB:%s', [FOpenFile.Text]);
-end;
-
-end. 
+end.

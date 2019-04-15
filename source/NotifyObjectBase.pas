@@ -1,13 +1,20 @@
 { ****************************************************************************** }
-{ * Delay trigger imp, support,                                                * }
-{ * https://github.com/PassByYou888/CoreCipher                                 * }
+{ * Delay trigger              by qq600585                                     * }
+{ * https://zpascal.net                                                        * }
+{ * https://github.com/PassByYou888/zAI                                        * }
 { * https://github.com/PassByYou888/ZServer4D                                  * }
-{ * https://github.com/PassByYou888/zExpression                                * }
-{ * https://github.com/PassByYou888/zTranslate                                 * }
-{ * https://github.com/PassByYou888/zSound                                     * }
-{ * https://github.com/PassByYou888/zAnalysis                                  * }
-{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/PascalString                               * }
 { * https://github.com/PassByYou888/zRasterization                             * }
+{ * https://github.com/PassByYou888/CoreCipher                                 * }
+{ * https://github.com/PassByYou888/zSound                                     * }
+{ * https://github.com/PassByYou888/zChinese                                   * }
+{ * https://github.com/PassByYou888/zExpression                                * }
+{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/zAnalysis                                  * }
+{ * https://github.com/PassByYou888/FFMPEG-Header                              * }
+{ * https://github.com/PassByYou888/zTranslate                                 * }
+{ * https://github.com/PassByYou888/InfiniteIoT                                * }
+{ * https://github.com/PassByYou888/FastMD5                                    * }
 { ****************************************************************************** }
 (*
   update history
@@ -84,6 +91,7 @@ type
     FCurrentExecute: TNPostExecute;
     FBreakProgress: Boolean;
     FPaused: Boolean;
+    Critical: TCritical;
   public
     constructor Create;
     destructor Destroy; override;
@@ -109,7 +117,6 @@ type
     function PostExecuteP(Delay: Double; DataEng: TDataFrameEngine; OnExecuteProc: TNPostExecuteProc): TNPostExecute; overload;
     function PostExecuteP(Delay: Double; OnExecuteProc: TNPostExecuteProc): TNPostExecute; overload;
 {$ENDIF}
-
     procedure Delete(p: TNPostExecute); overload; virtual;
 
     procedure Progress(deltaTime: Double);
@@ -300,12 +307,14 @@ begin
   FCurrentExecute := nil;
   FBreakProgress := False;
   FPaused := False;
+  Critical := TCritical.Create;
 end;
 
 destructor TNProgressPost.Destroy;
 begin
   ResetPost;
   DisposeObject(FPostExecuteList);
+  DisposeObject(Critical);
   inherited Destroy;
 end;
 
@@ -313,7 +322,7 @@ procedure TNProgressPost.ResetPost;
 var
   i: Integer;
 begin
-  LockObject(FPostExecuteList); // atom
+  Critical.Acquire; // atom
   try
     try
       for i := 0 to FPostExecuteList.Count - 1 do
@@ -326,7 +335,7 @@ begin
     except
     end;
   finally
-      UnLockObject(FPostExecuteList); // atom
+      Critical.Release; // atom
   end;
   FBreakProgress := True;
 end;
@@ -335,11 +344,11 @@ function TNProgressPost.PostExecute(): TNPostExecute;
 begin
   Result := FPostClass.Create;
   Result.FOwner := Self;
-  LockObject(FPostExecuteList); // atom
+  Critical.Acquire; // atom
   try
       FPostExecuteList.Add(Result);
   finally
-      UnLockObject(FPostExecuteList); // atom
+      Critical.Release; // atom
   end;
 end;
 
@@ -427,7 +436,7 @@ procedure TNProgressPost.Delete(p: TNPostExecute);
 var
   i: Integer;
 begin
-  LockObject(FPostExecuteList); // atom
+  Critical.Acquire; // atom
   try
     i := 0;
     while i < FPostExecuteList.Count do
@@ -442,7 +451,7 @@ begin
             inc(i);
       end;
   finally
-      UnLockObject(FPostExecuteList); // atom
+      Critical.Release; // atom
   end;
 end;
 
@@ -462,7 +471,7 @@ begin
 
   L := TCoreClassListForObj.Create;
 
-  LockObject(FPostExecuteList); // atom
+  Critical.Acquire; // atom
   i := 0;
   try
     while i < FPostExecuteList.Count do
@@ -478,7 +487,7 @@ begin
             inc(i);
       end;
   finally
-      UnLockObject(FPostExecuteList); // atom
+      Critical.Release; // atom
   end;
 
   i := 0;

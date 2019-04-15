@@ -1,14 +1,21 @@
 { ****************************************************************************** }
 { * media center                                                               * }
 { * written by QQ 600585@qq.com                                                * }
-{ * https://github.com/PassByYou888/CoreCipher                                 * }
+{ * https://zpascal.net                                                        * }
+{ * https://github.com/PassByYou888/zAI                                        * }
 { * https://github.com/PassByYou888/ZServer4D                                  * }
-{ * https://github.com/PassByYou888/zExpression                                * }
-{ * https://github.com/PassByYou888/zTranslate                                 * }
-{ * https://github.com/PassByYou888/zSound                                     * }
-{ * https://github.com/PassByYou888/zAnalysis                                  * }
-{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/PascalString                               * }
 { * https://github.com/PassByYou888/zRasterization                             * }
+{ * https://github.com/PassByYou888/CoreCipher                                 * }
+{ * https://github.com/PassByYou888/zSound                                     * }
+{ * https://github.com/PassByYou888/zChinese                                   * }
+{ * https://github.com/PassByYou888/zExpression                                * }
+{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/zAnalysis                                  * }
+{ * https://github.com/PassByYou888/FFMPEG-Header                              * }
+{ * https://github.com/PassByYou888/zTranslate                                 * }
+{ * https://github.com/PassByYou888/InfiniteIoT                                * }
+{ * https://github.com/PassByYou888/FastMD5                                    * }
 { ****************************************************************************** }
 unit MediaCenter;
 
@@ -37,6 +44,7 @@ type
 
   TFileIOHook = class
   private
+    FCritical: TCritical;
     FList: TCoreClassList;
 
     function GetSearchItems(index: Integer): PSearchConfigInfo;
@@ -96,7 +104,7 @@ function FileIOExists(const FileName: SystemString): Boolean;
 function GetResourceStream(const FileName: SystemString): TStream;
 
 type
-  TGlobalMediaType  = (gmtSound, gmtArt, gmtTile, gmtBrush, gmtUser);
+  TGlobalMediaType = (gmtSound, gmtArt, gmtTile, gmtBrush, gmtUser);
   TGlobalMediaTypes = set of TGlobalMediaType;
 
 const
@@ -120,23 +128,32 @@ uses IOUtils, SysUtils, Variants;
 
 function FileIOCreate(const FileName: SystemString): TCoreClassStream;
 begin
-  LockObject(FileIO);
-  Result := FileIO.FileIOStream(FileName, fmCreate);
-  UnLockObject(FileIO);
+  FileIO.FCritical.Acquire;
+  try
+      Result := FileIO.FileIOStream(FileName, fmCreate);
+  finally
+      FileIO.FCritical.Release;
+  end;
 end;
 
 function FileIOOpen(const FileName: SystemString): TCoreClassStream;
 begin
-  LockObject(FileIO);
-  Result := FileIO.FileIOStream(FileName, fmOpenRead);
-  UnLockObject(FileIO);
+  FileIO.FCritical.Acquire;
+  try
+      Result := FileIO.FileIOStream(FileName, fmOpenRead);
+  finally
+      FileIO.FCritical.Release;
+  end;
 end;
 
 function FileIOExists(const FileName: SystemString): Boolean;
 begin
-  LockObject(FileIO);
-  Result := FileIO.FileIOStreamExists(FileName);
-  UnLockObject(FileIO);
+  FileIO.FCritical.Acquire;
+  try
+      Result := FileIO.FileIOStreamExists(FileName);
+  finally
+      FileIO.FCritical.Release;
+  end;
 end;
 
 function TFileIOHook.GetSearchItems(index: Integer): PSearchConfigInfo;
@@ -167,7 +184,7 @@ begin
                 begin
                   if aIntf.ItemFastOpen(ItmRecursionHnd.ReturnHeader.CurrentHeader, ItemHnd) then
                     begin
-                      Hnd := TItemStreamEngine.Create(aIntf, ItemHnd);
+                      Hnd := TItemStream.Create(aIntf, ItemHnd);
                       Result := True;
                       Exit;
                     end;
@@ -180,7 +197,7 @@ begin
     begin
       if aIntf.ItemFastOpen(ItmSearchHnd.HeaderPOS, ItemHnd) then
         begin
-          Hnd := TItemStreamEngine.Create(aIntf, ItemHnd);
+          Hnd := TItemStream.Create(aIntf, ItemHnd);
           Result := True;
           Exit;
         end;
@@ -264,6 +281,7 @@ end;
 constructor TFileIOHook.Create;
 begin
   inherited Create;
+  FCritical := TCritical.Create;
   FList := TCoreClassList.Create;
 end;
 
@@ -273,6 +291,7 @@ begin
       DeleteSearchIndex(0);
 
   DisposeObject(FList);
+  DisposeObject(FCritical);
   inherited Destroy;
 end;
 
@@ -746,6 +765,7 @@ begin
     begin
       db := TObjectDataManager.CreateAsStream(GetResourceStream('sound.ox'), 'sound.ox', ObjectDataMarshal.ID, True, False, True);
       SoundLibrary := TLibraryManager.Create(db, '/');
+      SoundLibrary.AutoFreeDataEngine := True;
       FileIO.AddSearchObj(True, SoundLibrary, '/');
     end;
 
@@ -753,6 +773,7 @@ begin
     begin
       db := TObjectDataManager.CreateAsStream(GetResourceStream('art.ox'), 'art.ox', ObjectDataMarshal.ID, True, False, True);
       ArtLibrary := TLibraryManager.Create(db, '/');
+      ArtLibrary.AutoFreeDataEngine := True;
       FileIO.AddSearchObj(True, ArtLibrary, '/');
     end;
 
@@ -760,6 +781,7 @@ begin
     begin
       db := TObjectDataManager.CreateAsStream(GetResourceStream('tile.ox'), 'tile.ox', ObjectDataMarshal.ID, True, False, True);
       TileLibrary := TLibraryManager.Create(db, '/');
+      TileLibrary.AutoFreeDataEngine := True;
       FileIO.AddSearchObj(True, TileLibrary, '/');
     end;
 
@@ -767,6 +789,7 @@ begin
     begin
       db := TObjectDataManager.CreateAsStream(GetResourceStream('brush.ox'), 'brush.ox', ObjectDataMarshal.ID, True, False, True);
       BrushLibrary := TLibraryManager.Create(db, '/');
+      BrushLibrary.AutoFreeDataEngine := True;
       FileIO.AddSearchObj(True, BrushLibrary, '/');
     end;
 
@@ -774,6 +797,7 @@ begin
     begin
       db := TObjectDataManager.CreateAsStream(GetResourceStream('user.ox'), 'user.ox', ObjectDataMarshal.ID, True, False, True);
       UserLibrary := TLibraryManager.Create(db, '/');
+      UserLibrary.AutoFreeDataEngine := True;
       FileIO.AddSearchObj(True, UserLibrary, '/');
     end;
 
@@ -791,7 +815,6 @@ begin
   if SoundLibrary <> nil then
     begin
       FileIO.DeleteSearchObj(SoundLibrary);
-      DisposeObject(SoundLibrary.DBEngine);
       DisposeObject(SoundLibrary);
       SoundLibrary := nil;
     end;
@@ -799,7 +822,6 @@ begin
   if ArtLibrary <> nil then
     begin
       FileIO.DeleteSearchObj(ArtLibrary);
-      DisposeObject(ArtLibrary.DBEngine);
       DisposeObject(ArtLibrary);
       ArtLibrary := nil;
     end;
@@ -807,7 +829,6 @@ begin
   if TileLibrary <> nil then
     begin
       FileIO.DeleteSearchObj(TileLibrary);
-      DisposeObject(TileLibrary.DBEngine);
       DisposeObject(TileLibrary);
       TileLibrary := nil;
     end;
@@ -815,7 +836,6 @@ begin
   if BrushLibrary <> nil then
     begin
       FileIO.DeleteSearchObj(BrushLibrary);
-      DisposeObject(BrushLibrary.DBEngine);
       DisposeObject(BrushLibrary);
       BrushLibrary := nil;
     end;
@@ -823,7 +843,6 @@ begin
   if UserLibrary <> nil then
     begin
       FileIO.DeleteSearchObj(UserLibrary);
-      DisposeObject(UserLibrary.DBEngine);
       DisposeObject(UserLibrary);
       UserLibrary := nil;
     end;

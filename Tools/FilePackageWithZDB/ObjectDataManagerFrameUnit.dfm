@@ -1,13 +1,13 @@
 object ObjectDataManagerFrame: TObjectDataManagerFrame
   Left = 0
   Top = 0
-  Width = 810
-  Height = 431
+  Width = 791
+  Height = 416
   TabOrder = 0
   object Splitter: TSplitter
     Left = 185
     Top = 0
-    Height = 431
+    Height = 416
     ExplicitLeft = 200
     ExplicitTop = 64
     ExplicitHeight = 100
@@ -15,8 +15,8 @@ object ObjectDataManagerFrame: TObjectDataManagerFrame
   object ListView: TListView
     Left = 188
     Top = 0
-    Width = 622
-    Height = 431
+    Width = 603
+    Height = 416
     Align = alClient
     BorderStyle = bsNone
     Columns = <
@@ -26,7 +26,7 @@ object ObjectDataManagerFrame: TObjectDataManagerFrame
       end
       item
         Caption = 'Property'
-        Width = 80
+        Width = 100
       end
       item
         Caption = 'Size'
@@ -34,12 +34,12 @@ object ObjectDataManagerFrame: TObjectDataManagerFrame
       end
       item
         Alignment = taRightJustify
-        Caption = 'Date'
-        Width = 100
+        Caption = 'Time'
+        Width = 120
       end
       item
-        Caption = 'Time'
-        Width = 100
+        Caption = 'Modification Time'
+        Width = 120
       end>
     ColumnClick = False
     DoubleBuffered = True
@@ -51,23 +51,20 @@ object ObjectDataManagerFrame: TObjectDataManagerFrame
     PopupMenu = PopupMenu
     TabOrder = 0
     ViewStyle = vsReport
+    OnDblClick = Action_OpenExecute
     OnEdited = ListViewEdited
     OnEditing = ListViewEditing
     OnKeyUp = ListViewKeyUp
-    ExplicitWidth = 422
-    ExplicitHeight = 316
   end
   object TreePanel: TPanel
     Left = 0
     Top = 0
     Width = 185
-    Height = 431
+    Height = 416
     Align = alLeft
     BevelOuter = bvNone
     PopupMenu = PopupMenu
     TabOrder = 1
-    ExplicitLeft = -3
-    ExplicitHeight = 316
   end
   object ActionList: TActionList
     Left = 224
@@ -92,6 +89,10 @@ object ObjectDataManagerFrame: TObjectDataManagerFrame
       Caption = 'Export...'
       OnExecute = ActionExportExecute
     end
+    object Action_Open: TAction
+      Caption = 'Open'
+      OnExecute = Action_OpenExecute
+    end
   end
   object OpenDialog: TOpenDialog
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofPathMustExist, ofFileMustExist, ofEnableSizing]
@@ -101,6 +102,12 @@ object ObjectDataManagerFrame: TObjectDataManagerFrame
   object PopupMenu: TPopupMenu
     Left = 336
     Top = 128
+    object Open1: TMenuItem
+      Action = Action_Open
+    end
+    object N1: TMenuItem
+      Caption = '-'
+    end
     object CreateDirectory1: TMenuItem
       Action = ActionCreateDir
     end
@@ -119,5 +126,9 @@ object ObjectDataManagerFrame: TObjectDataManagerFrame
     object Rename1: TMenuItem
       Action = ActionRename
     end
+  end
+  object SaveDialog: TSaveDialog
+    Left = 256
+    Top = 216
   end
 end
