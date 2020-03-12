@@ -7,7 +7,7 @@ uses
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   FMX.Controls.Presentation, FMX.StdCtrls, FMX.ScrollBox, FMX.Memo,
 
-  MediaCenter, zSound_Bass;
+  MediaCenter, zSound_Bass, zSound;
 
 type
   TForm1 = class(TForm)
@@ -34,39 +34,44 @@ type
 
 var
   Form1: TForm1;
+function media: TzSound;
 
 implementation
 
 {$R *.fmx}
+function media: TzSound;
+begin
+  Result:=SoundEngine_Bass;
+end;
 
 procedure TForm1.Button1Click(Sender: TObject);
 begin
-  Media.PlayMusic('Music.mp3');
+  media.PlayMusic('Music.mp3');
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
-  Media.StopMusic;
+  media.StopMusic;
 end;
 
 procedure TForm1.Button3Click(Sender: TObject);
 begin
-  Media.PlayAmbient('Ambient.mp3');
+  media.PlayAmbient('Ambient.mp3');
 end;
 
 procedure TForm1.Button4Click(Sender: TObject);
 begin
-  Media.StopAmbient;
+  media.StopAmbient;
 end;
 
 procedure TForm1.Button5Click(Sender: TObject);
 begin
-  Media.PlaySound('hit.mp3');
+  media.PlaySound('hit.mp3');
 end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 begin
-  Media.StopSound('hit.mp3');
+  media.StopSound('hit.mp3');
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);

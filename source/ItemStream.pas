@@ -39,7 +39,7 @@ type
   public
     constructor Create(eng_: TObjectDataManager; DBPath, DBItem: SystemString); overload;
     constructor Create(eng_: TObjectDataManager; var ItemHnd: TItemHandle); overload;
-    constructor Create(eng_: TObjectDataManager; var ItemHeaderPos: Int64); overload;
+    constructor Create(eng_: TObjectDataManager; const ItemHeaderPos: Int64); overload;
     destructor Destroy; override;
 
     procedure SaveToFile(fn: SystemString);
@@ -50,6 +50,8 @@ type
 
     function Seek(Offset: longint; origin: Word): longint; overload; override;
     function Seek(const Offset: Int64; origin: TSeekOrigin): Int64; overload; override;
+
+    function CopyFrom64(const Source: TCoreClassStream; Count: Int64): Int64;
 
     procedure SeekStart;
     procedure SeekLast;
@@ -82,7 +84,7 @@ begin
   AutoFreeHnd := False;
 end;
 
-constructor TItemStream.Create(eng_: TObjectDataManager; var ItemHeaderPos: Int64);
+constructor TItemStream.Create(eng_: TObjectDataManager; const ItemHeaderPos: Int64);
 begin
   inherited Create;
   DB_Engine := eng_;
@@ -118,7 +120,7 @@ procedure TItemStream.LoadFromFile(fn: SystemString);
 var
   stream: TCoreClassStream;
 begin
-  stream := TCoreClassFileStream.Create(fn, fmOpenRead or fmShareDenyWrite);
+  stream := TCoreClassFileStream.Create(fn, fmOpenRead or fmShareDenyNone);
   try
       CopyFrom(stream, stream.Size);
   finally
@@ -196,6 +198,40 @@ begin
   Result := DB_Engine.ItemGetPos(ItemHnd_Ptr^);
 end;
 
+function TItemStream.CopyFrom64(const Source: TCoreClassStream; Count: Int64): Int64;
+const
+  MaxBufSize = $F000;
+var
+  BufSize, N: Int64;
+  buffer: PByte;
+begin
+  if Count <= 0 then
+    begin
+      Source.Position := 0;
+      Count := Source.Size;
+    end;
+  Result := Count;
+  if Count > MaxBufSize then
+      BufSize := MaxBufSize
+  else
+      BufSize := Count;
+  buffer := System.GetMemory(BufSize);
+  try
+    while Count <> 0 do
+      begin
+        if Count > BufSize then
+            N := BufSize
+        else
+            N := Count;
+        Source.ReadBuffer(buffer^, N);
+        WriteBuffer(buffer^, N);
+        Dec(Count, N);
+      end;
+  finally
+      System.FreeMem(buffer);
+  end;
+end;
+
 procedure TItemStream.SeekStart;
 begin
   DB_Engine.ItemSeekStart(ItemHnd_Ptr^);
@@ -208,7 +244,10 @@ end;
 
 function TItemStream.UpdateHandle: Boolean;
 begin
-  Result := DB_Engine.ItemUpdate(ItemHnd_Ptr^);
+  if DB_Engine.IsOnlyRead then
+      Result := False
+  else
+      Result := DB_Engine.ItemUpdate(ItemHnd_Ptr^);
 end;
 
 function TItemStream.CloseHandle: Boolean;
