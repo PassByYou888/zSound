@@ -66,7 +66,7 @@ type
     function GetLinkValue(index: Integer): TGeoFloat;
     procedure SetLinkValue(index: Integer; const Value: TGeoFloat);
   public
-    property vec2: TVec2 read GetVec2 write SetVec2;
+    property Vec2: TVec2 read GetVec2 write SetVec2;
     property Vec3: TVec3 read GetVec3 write SetVec3;
     property XYZ: TVec3 read GetVec3 write SetVec3;
     property RGB: TVec3 read GetVec3 write SetVec3;
@@ -137,7 +137,7 @@ type
     function GetLinkValue(index: Integer): TGeoFloat;
     procedure SetLinkValue(index: Integer; const Value: TGeoFloat);
   public
-    property vec2: TVec2 read GetVec2 write SetVec2;
+    property Vec2: TVec2 read GetVec2 write SetVec2;
     property Vec3: TVec3 read Buff write Buff;
     property XYZ: TVec3 read Buff write Buff;
     property COLOR: TVec3 read Buff write Buff;
@@ -285,14 +285,14 @@ function Vec4(const v: TVec3): TVec4; overload;
 function Vec4(const v: TVec3; const z: TGeoFloat): TVec4; overload;
 function Vec4(const v: TVector3): TVec4; overload;
 
-function vec2(const v: TVec3): TVector2; overload;
-function vec2(const v: TVec4): TVector2; overload;
-function vec2(const v: TVector3): TVector2; overload;
-function vec2(const v: TVector4): TVector2; overload;
+function Vec2(const v: TVec3): TVector2; overload;
+function Vec2(const v: TVec4): TVector2; overload;
+function Vec2(const v: TVector3): TVector2; overload;
+function Vec2(const v: TVector4): TVector2; overload;
 
 function VecToStr(const v: TVec2): SystemString; overload;
 function VecToStr(const v: TVector2): SystemString; overload;
-function VecToStr(const v: TArrayVec2): TPascalString; overload;
+function VecToStr(const v: TArrayVec2): SystemString; overload;
 function VecToStr(const v: TVec3): SystemString; overload;
 function VecToStr(const v: TVec4): SystemString; overload;
 function VecToStr(const v: TVector3): SystemString; overload;
@@ -333,8 +333,8 @@ function MovementDistance(const s, d: TRectV2; dt: TGeoFloat): TRectV2; overload
 function MovementDistance(const sour, dest: TVector4; Distance: TGeoFloat): TVector4; overload;
 function MovementDistance(const sour, dest: TVector3; Distance: TGeoFloat): TVector3; overload;
 
-function MovementDistanceDeltaTime(const s, d: TVec2; ASpeed: TGeoFloat): Double; overload;
-function MovementDistanceDeltaTime(const s, d: TRectV2; ASpeed: TGeoFloat): Double; overload;
+function MovementDistanceDeltaTime(const s, d: TVec2; Speed_: TGeoFloat): Double; overload;
+function MovementDistanceDeltaTime(const s, d: TRectV2; Speed_: TGeoFloat): Double; overload;
 function AngleRollDistanceDeltaTime(const s, d: TGeoFloat; ARollSpeed: TGeoFloat): Double; overload;
 
 function BounceVector(const Current: TVector4; DeltaDistance: TGeoFloat; const BeginVector, EndVector: TVector4; var EndFlag: Boolean): TVector4; overload;
@@ -448,23 +448,23 @@ begin
   Result := VectorMake(v.Buff);
 end;
 
-function vec2(const v: TVec3): TVector2;
+function Vec2(const v: TVec3): TVector2;
 begin
-  Result := vec2(v[0], v[1]);
+  Result := Vec2(v[0], v[1]);
 end;
 
-function vec2(const v: TVec4): TVector2;
+function Vec2(const v: TVec4): TVector2;
 begin
-  Result := vec2(v[0], v[1]);
+  Result := Vec2(v[0], v[1]);
 end;
 
-function vec2(const v: TVector3): TVector2;
+function Vec2(const v: TVector3): TVector2;
 begin
   Result[0] := v.Buff[0];
   Result[1] := v.Buff[1];
 end;
 
-function vec2(const v: TVector4): TVector2;
+function Vec2(const v: TVector4): TVector2;
 begin
   Result[0] := v.Buff[0];
   Result[1] := v.Buff[1];
@@ -480,17 +480,13 @@ begin
   Result := PFormat('%g,%g', [v[0], v[1]]);
 end;
 
-function VecToStr(const v: TArrayVec2): TPascalString;
+function VecToStr(const v: TArrayVec2): SystemString;
 var
   i: Integer;
 begin
   Result := '';
   for i := low(v) to high(v) do
-    begin
-      if i <> Low(v) then
-          Result.Append(',');
-      Result.Append('%g,%g', [v[i, 0], v[i, 1]]);
-    end;
+      Result := Result + if_(i <> low(v), ',', '') + PFormat('%g,%g', [v[i, 0], v[i, 1]]);
 end;
 
 function VecToStr(const v: TVec3): SystemString;
@@ -855,17 +851,17 @@ begin
   Result[2] := sour[2] + k * (dest[2] - sour[2]);
 end;
 
-function MovementDistanceDeltaTime(const s, d: TVec2; ASpeed: TGeoFloat): Double;
+function MovementDistanceDeltaTime(const s, d: TVec2; Speed_: TGeoFloat): Double;
 begin
-  Result := Distance(s, d) / ASpeed;
+  Result := Distance(s, d) / Speed_;
 end;
 
-function MovementDistanceDeltaTime(const s, d: TRectV2; ASpeed: TGeoFloat): Double;
+function MovementDistanceDeltaTime(const s, d: TRectV2; Speed_: TGeoFloat): Double;
 var
   d1, d2: Double;
 begin
-  d1 := MovementDistanceDeltaTime(s[0], d[0], ASpeed);
-  d2 := MovementDistanceDeltaTime(s[1], d[1], ASpeed);
+  d1 := MovementDistanceDeltaTime(s[0], d[0], Speed_);
+  d2 := MovementDistanceDeltaTime(s[1], d[1], Speed_);
   if d1 > d2 then
       Result := d1
   else
@@ -1929,17 +1925,17 @@ end;
 
 class operator TVector2.Implicit(Value: TGeoFloat): TVector2;
 begin
-  Result.Buff := vec2(Value);
+  Result.Buff := Vec2(Value);
 end;
 
 class operator TVector2.Implicit(Value: TPoint): TVector2;
 begin
-  Result.Buff := vec2(Value);
+  Result.Buff := Vec2(Value);
 end;
 
 class operator TVector2.Implicit(Value: TPointf): TVector2;
 begin
-  Result.Buff := vec2(Value);
+  Result.Buff := Vec2(Value);
 end;
 
 class operator TVector2.Implicit(Value: TVec2): TVector2;
@@ -1964,7 +1960,7 @@ end;
 
 procedure TVector2.SetLocation(const fx, fy: TGeoFloat);
 begin
-  Buff := vec2(fx, fy);
+  Buff := Vec2(fx, fy);
 end;
 
 function TVector2.Distance(const v2: TVector2): TGeoFloat;

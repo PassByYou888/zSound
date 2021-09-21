@@ -236,6 +236,7 @@ function EvaluateExpressionValue_P(UsedCache: Boolean; SpecialAsciiToken: TListP
   TextEngClass: TTextParsingClass; TextStyle: TTextStyle; ExpressionText: SystemString; const OnGetValue: TOnDeclValueProc): Variant;
 {$ENDREGION 'internal define'}
 
+function OpCache: THashObjectList;
 procedure CleanOpCache();
 
 { prototype: EvaluateExpressionValue }
@@ -297,8 +298,8 @@ function EStrToDouble(s: U_String; default: Double): Double;
 
 // print
 function ExpressionValueVectorToStr(v: TExpressionValueVector): TPascalString;
-procedure DoStatus(v: TExpressionValueVector); overload;
-procedure DoStatus(v: TExpressionValueMatrix); overload;
+procedure DoStatusE(v: TExpressionValueVector); overload;
+procedure DoStatusE(v: TExpressionValueMatrix); overload;
 
 // test
 procedure EvaluateExpressionVectorAndMatrix_test_;
@@ -306,7 +307,7 @@ procedure EvaluateExpressionVectorAndMatrix_test_;
 implementation
 
 var
-  OpCache: THashObjectList;
+  OpCache___: THashObjectList = nil;
 
 {$REGION 'internal imp'}
 
@@ -326,11 +327,13 @@ const
     edtString, edtProcExp,
     edtExpressionAsValue]);
 
-  SymbolOperationPriority: array [0 .. 3] of TSymbolOperations = (
-    ([soOr, soAnd, soXor]),
+  SymbolOperationPriority: array [0 .. 4] of TSymbolOperations = (
+    ([soAnd]),
+    ([soOr, soXor]),
     ([soEqual, soLessThan, soEqualOrLessThan, soGreaterThan, soEqualOrGreaterThan, soNotEqual]),
     ([soAdd, soSub]),
-    ([soMul, soDiv, soMod, soIntDiv, soShl, soShr, soPow]));
+    ([soMul, soDiv, soMod, soIntDiv, soShl, soShr, soPow])
+    );
 
   AllowPrioritySymbol: TSymbolOperations = ([
     soAdd, soSub, soMul, soDiv, soMod, soIntDiv, soPow, soOr, soAnd, soXor,
@@ -1569,6 +1572,8 @@ begin
 
   if ParsingEng.ParsingData.Len < 1 then
       Exit;
+  if ParsingEng.TokenCountT([ttTextDecl, ttNumber, ttAscii]) = 0 then
+      Exit;
 
   cPos := 1;
   BlockIndent := 0;
@@ -2721,6 +2726,7 @@ var
   Op: TOpCode;
   i: Integer;
 begin
+  Op := nil;
   if UsedCache then
     begin
       LockObject(OpCache);
@@ -2772,6 +2778,7 @@ var
   Op: TOpCode;
   i: Integer;
 begin
+  Op := nil;
   if UsedCache then
     begin
       LockObject(OpCache);
@@ -2823,6 +2830,7 @@ var
   Op: TOpCode;
   i: Integer;
 begin
+  Op := nil;
   if UsedCache then
     begin
       LockObject(OpCache);
@@ -2870,6 +2878,13 @@ end;
 {$ENDREGION 'internal imp'}
 
 
+function OpCache: THashObjectList;
+begin
+  if OpCache___ = nil then
+      OpCache___ := THashObjectList.CustomCreate(True, 1024 * 1024);
+  Result := OpCache___;
+end;
+
 procedure CleanOpCache();
 begin
   LockObject(OpCache);
@@ -2897,6 +2912,7 @@ var
   t: TTextParsing;
   L: TPascalStringList;
 begin
+  Result := False;
   t := TTextParsing.Create(umlDeleteChar(ExpressionText, #13#10#32#9), TextStyle, SpecialAsciiToken, SpacerSymbol.v);
   L := TPascalStringList.Create;
   if t.FillSymbolVector(L) then
@@ -2928,6 +2944,7 @@ begin
       Exit;
     end;
 
+  Op := nil;
   if (UsedCache) and (const_vl = nil) then
     begin
       LockObject(OpCache);
@@ -3084,6 +3101,8 @@ var
   i: Integer;
 begin
   SetLength(Result, 0);
+  if ExpressionText = '' then
+      Exit;
   t := TTextParsing.Create(ExpressionText, TextStyle, SpecialAsciiToken, SpacerSymbol.v);
   L := TPascalStringList.Create;
   if t.FillSymbolVector(L) then
@@ -3247,7 +3266,7 @@ begin
   Result := Result.TrimChar(', ');
 end;
 
-procedure DoStatus(v: TExpressionValueVector);
+procedure DoStatusE(v: TExpressionValueVector);
 var
   i: Integer;
 begin
@@ -3256,12 +3275,12 @@ begin
   DoStatusNoLn;
 end;
 
-procedure DoStatus(v: TExpressionValueMatrix);
+procedure DoStatusE(v: TExpressionValueMatrix);
 var
   i: Integer;
 begin
   for i := 0 to high(v) do
-      DoStatus(v[i]);
+      DoStatusE(v[i]);
 end;
 
 procedure EvaluateExpressionVectorAndMatrix_test_;
@@ -3283,10 +3302,10 @@ end;
 
 initialization
 
-OpCache := THashObjectList.CustomCreate(True, $FFFF);
+OpCache___ := nil;
 
 finalization
 
-DisposeObject(OpCache);
+DisposeObject(OpCache___);
 
 end.

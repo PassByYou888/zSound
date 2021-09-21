@@ -40,7 +40,7 @@ type
     Alias: THashVariantList;
   end;
 
-  TFileIOHook = class
+  TFileIO = class
   private
     FCritical: TCritical;
     FList: TCoreClassList;
@@ -79,22 +79,28 @@ type
   end;
 
 var
-  FileIO: TFileIOHook = nil;
+  FileIO: TFileIO = nil;
 
-  // resource: sound.ox or sound
+  // resource: sound.ox or "sound"
   SoundLibrary: TObjectDataHashField = nil;
-  // resource: art.ox or art
+  // resource: art.ox or "art"
   ArtLibrary: TObjectDataHashField = nil;
-  // resource: tile.ox or tile
+  // resource: tile.ox or "tile"
   TileLibrary: TObjectDataHashField = nil;
-  // resource: brush.ox or brush
+  // resource: brush.ox or "brush"
   BrushLibrary: TObjectDataHashField = nil;
-  // resource: user.ox or user
-  UserLibrary: TObjectDataHashField = nil;
-  // resource: ai.ox or ai
+  // resource: fonts.ox or "fonts"
+  FontsLibrary: TObjectDataHashField = nil;
+  // resource: ai.ox or "ai"
   AILibrary: TObjectDataHashField = nil;
-  // resource: model.ox or model
+  // resource: model.ox or "model"
   ModelLibrary: TObjectDataHashField = nil;
+  // resource: geometry.ox or "geometry"
+  GeometryLibrary: TObjectDataHashField = nil;
+  // resource: dict.ox or "dict"
+  DictLibrary: TObjectDataHashField = nil;
+  // resource: user.ox or "user"
+  UserLibrary: TObjectDataHashField = nil;
 
   // sound engine
   SoundEngine: TzSound = nil;
@@ -102,15 +108,14 @@ var
 function FileIOCreate(const FileName: SystemString): TCoreClassStream;
 function FileIOOpen(const FileName: SystemString): TCoreClassStream;
 function FileIOExists(const FileName: SystemString): Boolean;
-
 function GetResourceStream(const FileName: SystemString): TStream;
 
 type
-  TGlobalMediaType = (gmtSound, gmtArt, gmtTile, gmtBrush, gmtAI, gmtModel, gmtUser);
+  TGlobalMediaType = (gmtSound, gmtArt, gmtTile, gmtBrush, gmtFonts, gmtAI, gmtModel, gmtGeometry, gmtDict, gmtUser);
   TGlobalMediaTypes = set of TGlobalMediaType;
 
 const
-  AllGlobalMediaTypes: TGlobalMediaTypes = ([gmtSound, gmtArt, gmtTile, gmtBrush, gmtAI, gmtModel, gmtUser]);
+  AllGlobalMediaTypes: TGlobalMediaTypes = ([gmtSound, gmtArt, gmtTile, gmtBrush, gmtFonts, gmtAI, gmtModel, gmtGeometry, gmtDict, gmtUser]);
 
 procedure InitGlobalMedia(t: TGlobalMediaTypes);
 procedure FreeGlobalMedia;
@@ -158,17 +163,17 @@ begin
   end;
 end;
 
-function TFileIOHook.GetSearchItems(index: Integer): PSearchConfigInfo;
+function TFileIO.GetSearchItems(index: Integer): PSearchConfigInfo;
 begin
   Result := FList[index];
 end;
 
-procedure TFileIOHook.SetSearchItems(index: Integer; const Value: PSearchConfigInfo);
+procedure TFileIO.SetSearchItems(index: Integer; const Value: PSearchConfigInfo);
 begin
   FList[index] := Value;
 end;
 
-function TFileIOHook.SearchObjData(aRootDir, AName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager; var Hnd: TCoreClassStream): Boolean;
+function TFileIO.SearchObjData(aRootDir, AName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager; var Hnd: TCoreClassStream): Boolean;
 var
   ItemHnd: TItemHandle;
   ItmSearchHnd: TItemSearch;
@@ -206,7 +211,7 @@ begin
     end;
 end;
 
-function TFileIOHook.SearchLib(LibName, ItmName: SystemString; Intf: TObjectDataHashField; var Hnd: TCoreClassStream): Boolean;
+function TFileIO.SearchLib(LibName, ItmName: SystemString; Intf: TObjectDataHashField; var Hnd: TCoreClassStream): Boolean;
 var
   n: SystemString;
   p: PHashItemData;
@@ -225,7 +230,7 @@ begin
     end;
 end;
 
-function TFileIOHook.SearchStreamList(AName: SystemString; Intf: TObjectDataHashItem; var Hnd: TCoreClassStream): Boolean;
+function TFileIO.SearchStreamList(AName: SystemString; Intf: TObjectDataHashItem; var Hnd: TCoreClassStream): Boolean;
 var
   p: PHashItemData;
 begin
@@ -239,7 +244,7 @@ begin
     end;
 end;
 
-function TFileIOHook.ExistsObjData(aRootDir, AName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager): Boolean;
+function TFileIO.ExistsObjData(aRootDir, AName: SystemString; Recursion: Boolean; aIntf: TObjectDataManager): Boolean;
 var
   ItmSearchHnd: TItemSearch;
   ItmRecursionHnd: TItemRecursionSearch;
@@ -264,7 +269,7 @@ begin
       Result := aIntf.ItemFindFirst(aRootDir, AName, ItmSearchHnd);
 end;
 
-function TFileIOHook.ExistsLib(LibName, ItmName: SystemString; Intf: TObjectDataHashField): Boolean;
+function TFileIO.ExistsLib(LibName, ItmName: SystemString; Intf: TObjectDataHashField): Boolean;
 var
   n: SystemString;
 begin
@@ -275,19 +280,19 @@ begin
   Result := Intf.PathItems[n] <> nil;
 end;
 
-function TFileIOHook.ExistsStreamList(AName: SystemString; Intf: TObjectDataHashItem): Boolean;
+function TFileIO.ExistsStreamList(AName: SystemString; Intf: TObjectDataHashItem): Boolean;
 begin
   Result := Intf.Names[AName] <> nil;
 end;
 
-constructor TFileIOHook.Create;
+constructor TFileIO.Create;
 begin
   inherited Create;
   FCritical := TCritical.Create;
   FList := TCoreClassList.Create;
 end;
 
-destructor TFileIOHook.Destroy;
+destructor TFileIO.Destroy;
 begin
   while SearchCount > 0 do
       DeleteSearchIndex(0);
@@ -297,7 +302,7 @@ begin
   inherited Destroy;
 end;
 
-function TFileIOHook.FileIOStream(FileName: SystemString; Mode: Word): TCoreClassStream;
+function TFileIO.FileIOStream(FileName: SystemString; Mode: Word): TCoreClassStream;
 var
   i: Integer;
   p: PSearchConfigInfo;
@@ -421,7 +426,7 @@ begin
   Result := nil;
 end;
 
-function TFileIOHook.FileIOStreamExists(FileName: SystemString): Boolean;
+function TFileIO.FileIOStreamExists(FileName: SystemString): Boolean;
 var
   i: Integer;
   p: PSearchConfigInfo;
@@ -512,18 +517,18 @@ begin
   end;
 end;
 
-procedure TFileIOHook.Clear;
+procedure TFileIO.Clear;
 begin
   while SearchCount > 0 do
       DeleteSearchIndex(0);
 end;
 
-function TFileIOHook.SearchCount: Integer;
+function TFileIO.SearchCount: Integer;
 begin
   Result := FList.Count;
 end;
 
-procedure TFileIOHook.AddPrioritySearchObj(Recursion: Boolean; Intf: TCoreClassObject; Info: SystemString);
+procedure TFileIO.AddPrioritySearchObj(Recursion: Boolean; Intf: TCoreClassObject; Info: SystemString);
 var
   p: PSearchConfigInfo;
 begin
@@ -542,7 +547,7 @@ begin
     end;
 end;
 
-procedure TFileIOHook.AddSearchObj(Recursion: Boolean; Intf: TCoreClassObject; Info: SystemString);
+procedure TFileIO.AddSearchObj(Recursion: Boolean; Intf: TCoreClassObject; Info: SystemString);
 var
   p: PSearchConfigInfo;
 begin
@@ -554,7 +559,7 @@ begin
   FList.Add(p);
 end;
 
-procedure TFileIOHook.DeleteSearchObj(Value: TCoreClassObject);
+procedure TFileIO.DeleteSearchObj(Value: TCoreClassObject);
 var
   i: Integer;
   p: PSearchConfigInfo;
@@ -581,7 +586,7 @@ begin
     end;
 end;
 
-procedure TFileIOHook.DeleteSearchIndex(Value: Integer);
+procedure TFileIO.DeleteSearchIndex(Value: Integer);
 var
   p: PSearchConfigInfo;
 begin
@@ -597,7 +602,7 @@ begin
   FList.Delete(Value);
 end;
 
-function TFileIOHook.ChangePrioritySearchOption(Intf: TCoreClassObject; Recursion: Boolean; Info: SystemString): Boolean;
+function TFileIO.ChangePrioritySearchOption(Intf: TCoreClassObject; Recursion: Boolean; Info: SystemString): Boolean;
 var
   i: Integer;
   p: PSearchConfigInfo;
@@ -622,7 +627,7 @@ begin
   Result := True;
 end;
 
-function TFileIOHook.SetSearchObjAlias(Intf: TCoreClassObject; SourFileName, DestFileName: SystemString): Boolean;
+function TFileIO.SetSearchObjAlias(Intf: TCoreClassObject; SourFileName, DestFileName: SystemString): Boolean;
 var
   i: Integer;
   p: PSearchConfigInfo;
@@ -644,7 +649,7 @@ begin
     end;
 end;
 
-function TFileIOHook.SetSearchObjAliasFromList(Intf: TCoreClassObject; Alias: THashVariantList): Boolean;
+function TFileIO.SetSearchObjAliasFromList(Intf: TCoreClassObject; Alias: THashVariantList): Boolean;
 var
   i: Integer;
   p: PSearchConfigInfo;
@@ -667,7 +672,7 @@ begin
     end;
 end;
 
-function TFileIOHook.SetSearchObjAliasFromStream(Intf: TCoreClassObject; Alias: TCoreClassStream): Boolean;
+function TFileIO.SetSearchObjAliasFromStream(Intf: TCoreClassObject; Alias: TCoreClassStream): Boolean;
 var
   i: Integer;
   p: PSearchConfigInfo;
@@ -795,6 +800,14 @@ begin
       FileIO.AddSearchObj(True, BrushLibrary, '/');
     end;
 
+  if gmtFonts in t then
+    begin
+      db := TObjectDataManagerOfCache.CreateAsStream(GetResourceStream('fonts.ox'), 'fonts.ox', ObjectDataMarshal.ID, True, False, True);
+      FontsLibrary := TObjectDataHashField.Create(db, '/');
+      FontsLibrary.AutoFreeDataEngine := True;
+      FileIO.AddSearchObj(True, FontsLibrary, '/');
+    end;
+
   if gmtAI in t then
     begin
       db := TObjectDataManagerOfCache.CreateAsStream(GetResourceStream('ai.ox'), 'ai.ox', ObjectDataMarshal.ID, True, False, True);
@@ -809,6 +822,22 @@ begin
       ModelLibrary := TObjectDataHashField.Create(db, '/');
       ModelLibrary.AutoFreeDataEngine := True;
       FileIO.AddSearchObj(True, ModelLibrary, '/');
+    end;
+
+  if gmtGeometry in t then
+    begin
+      db := TObjectDataManagerOfCache.CreateAsStream(GetResourceStream('geometry.ox'), 'geometry.ox', ObjectDataMarshal.ID, True, False, True);
+      GeometryLibrary := TObjectDataHashField.Create(db, '/');
+      GeometryLibrary.AutoFreeDataEngine := True;
+      FileIO.AddSearchObj(True, GeometryLibrary, '/');
+    end;
+
+  if gmtDict in t then
+    begin
+      db := TObjectDataManagerOfCache.CreateAsStream(GetResourceStream('dict.ox'), 'dict.ox', ObjectDataMarshal.ID, True, False, True);
+      DictLibrary := TObjectDataHashField.Create(db, '/');
+      DictLibrary.AutoFreeDataEngine := True;
+      FileIO.AddSearchObj(True, DictLibrary, '/');
     end;
 
   if gmtUser in t then
@@ -858,6 +887,13 @@ begin
       BrushLibrary := nil;
     end;
 
+  if FontsLibrary <> nil then
+    begin
+      FileIO.DeleteSearchObj(FontsLibrary);
+      DisposeObject(FontsLibrary);
+      FontsLibrary := nil;
+    end;
+
   if UserLibrary <> nil then
     begin
       FileIO.DeleteSearchObj(UserLibrary);
@@ -884,19 +920,36 @@ begin
       DisposeObject(ModelLibrary);
       ModelLibrary := nil;
     end;
+
+  if GeometryLibrary <> nil then
+    begin
+      FileIO.DeleteSearchObj(GeometryLibrary);
+      DisposeObject(GeometryLibrary);
+      GeometryLibrary := nil;
+    end;
+
+  if DictLibrary <> nil then
+    begin
+      FileIO.DeleteSearchObj(DictLibrary);
+      DisposeObject(DictLibrary);
+      DictLibrary := nil;
+    end;
 end;
 
 initialization
 
-FileIO := TFileIOHook.Create;
+FileIO := TFileIO.Create;
 
 SoundLibrary := nil;
 ArtLibrary := nil;
 TileLibrary := nil;
 BrushLibrary := nil;
+FontsLibrary := nil;
 UserLibrary := nil;
 AILibrary := nil;
 ModelLibrary := nil;
+GeometryLibrary := nil;
+DictLibrary := nil;
 SoundEngine := nil;
 
 finalization

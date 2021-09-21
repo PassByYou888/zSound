@@ -11,23 +11,7 @@ zSound是从游戏引擎剥离而出的跨平台音频引擎，它支持所有�
 - FPC编译器支持:FPC3.0.4 or last,可参看本项目随附的[IOT入手指南](https://github.com/PassByYou888/ZServer4D/blob/master/Documents/%E5%85%A5%E6%89%8BIOT%E7%9A%84%E5%AE%8C%E5%85%A8%E6%94%BB%E7%95%A5.pdf)将FPC升级至github最新的版本
 - CodeTyphon 6.0 or last（尽量使用Online更新到最新的Cross工具链+相关库）
 
-## 平台支持，test with Delphi 10.2 upate 1 Tokyo and FPC 3.0.4
-
-- Windows: delphi-CrossSocket(C/S OK), delphi-DIOCP(C/S OK), delphi-ICS(C/S OK), delphi-Indy(C/S OK),delphi+fpc Synapse(C/S OK)
-- Android:Indy(C/S OK), CrossSocket(Only Client)
-- IOS Device: Indy(C/S OK), CrossSocket(Only Client)
-- IOS Simulaor: n/a
-- OSX: Indy(C/S OK)，ICS(未测试), CrossSocket(C/S OK)
-- Ubuntu16.04 x64 server: Indy(C/S OK), CrossSocket(C/S OK)
-- Ubuntu18.04 x86+x64 Desktop:only fpc3.0.4 Synapse(C/S OK)
-- Ubuntu18.04 x86+x64 Server:only fpc3.0.4 Synapse(C/S OK) 
-- Ubuntu18.04 arm32+arm neon Server:only fpc3.0.4 Synapse(C/S OK)
-- Ubuntu18.04 arm32+arm neon desktop:only fpc3.0.4 compile ok,no test on run.  
-- Ubuntu16.04 Mate arm32 desktop:only fpc3.0.4 compile ok, test passed  
-- Raspberry Pi 3 Debian linux armv7 desktop,only fpc 3.0.4,test passed.
-- wince(arm eabi hard flaot),windows 10 IOT,only fpc 3.3.1,test passed.
-
-## CPU架构支持，test with Delphi 10.2 upate 1 Tokyo and FPC 3.0.4
+## CPU架构支持，test with Delphi 10.2 update 1 Tokyo and FPC 3.0.4
 
 - MIPS(fpc-little endian), soft float, test pass on QEMU 
 - intel X86(fpc-x86), soft float
@@ -40,6 +24,10 @@ zSound是从游戏引擎剥离而出的跨平台音频引擎，它支持所有�
 
 
 # 更新日志
+
+### 2021-9-22
+
+- 更新了基础库，如果发现不能编译这种问题，给我说声
 
 ### 2020-3
 
@@ -57,6 +45,6 @@ zSound是从游戏引擎剥离而出的跨平台音频引擎，它支持所有�
 修复内核中的内存越界bug：该bug的症状为无故提示内存无法访问，通过正常debug很难排除，这是是内存越界时所造成的bug
 
 
-使用问题请加在互助qq群490269542
- 
-请不要直接加作者，谢谢大家
+
+- create by.qq600585
+

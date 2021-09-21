@@ -53,9 +53,9 @@ type
     CurrentBlockSeekPOS: Int64;
     CurrentFileSeekPOS: Int64;
     State: Integer;
-    MemorySiz: nativeUInt;
-    procedure write(var wVal: TItem);
-    procedure read(var rVal: TItem);
+    MemorySiz: NativeUInt;
+    procedure Write(var wVal: TItem);
+    procedure Read(var rVal: TItem);
   end;
 
   PObjectDataCacheItem = ^TObjectDataCacheItem;
@@ -67,9 +67,9 @@ type
     FirstHeaderPOS: Int64;
     LastHeaderPOS: Int64;
     State: Integer;
-    MemorySiz: nativeUInt;
-    procedure write(var wVal: TField);
-    procedure read(var rVal: TField);
+    MemorySiz: NativeUInt;
+    procedure Write(var wVal: TField);
+    procedure Read(var rVal: TField);
   end;
 
   PObjectDataCacheField = ^TObjectDataCacheField;
@@ -116,17 +116,18 @@ type
     function NewHandle(Stream_: TCoreClassStream; const dbFile: SystemString; const dbItemID: Byte; dbOnlyRead, IsNewDB_: Boolean): Boolean; overload;
     function NewHandle(FixedStringL: Byte; Stream_: TCoreClassStream; const dbFile: SystemString; const dbItemID: Byte; dbOnlyRead, IsNewDB_: Boolean): Boolean; overload;
   public
-    // DoOpen Database from file
+    // Open Database
     constructor Open(const dbFile: SystemString; const dbItemID: Byte; dbOnlyRead: Boolean); overload;
-    // create new Database file
+    // create new Database
     constructor CreateNew(const dbFile: SystemString; const dbItemID: Byte); overload;
     constructor CreateNew(FixedStringL: Byte; const dbFile: SystemString; const dbItemID: Byte); overload;
-    // create or DoOpen Database for Stream IO
+    // create or Open form Stream IO
     constructor CreateAsStream(Stream_: TCoreClassStream;
       const dbFile: SystemString; const dbItemID: Byte; dbOnlyRead, isNewDB, DestroyTimeFreeStream: Boolean); overload;
     constructor CreateAsStream(FixedStringL: Byte; Stream_: TCoreClassStream;
       const dbFile: SystemString; const dbItemID: Byte; dbOnlyRead, isNewDB, DestroyTimeFreeStream: Boolean); overload;
 
+    // destroy
     destructor Destroy; override;
 
     function CopyTo(DestDB: TObjectDataManager): Boolean;
@@ -154,10 +155,10 @@ type
     // split direct
     procedure SplitTo(RootPh, destFile: SystemString; SplitSiz: Int64);
 
-    // split to ZLib compressor for DB
+    // split to ZLib compressor for Database
     procedure SplitToZLib(RootPh, destFile: SystemString; SplitSiz: Int64);
 
-    // split to Parallel compressor for DB
+    // split to Parallel compressor for Database
     procedure SplitToParallelCompression(RootPh, destFile: SystemString; SplitSiz: Int64);
 
     // export to disk
@@ -166,6 +167,8 @@ type
     procedure ExpItemToDisk(DBPath, DBItem, ExpFilename_: SystemString);
 
     // state
+    function Is_BACKUP_Mode: Boolean;
+    function Is_Flush_Mode: Boolean;
     function isAbort: Boolean;
     function Close: Boolean;
     function ErrorNo: Int64;
@@ -227,7 +230,7 @@ type
     function ItemRename(const fieldPos: Int64; var ItemHnd: TItemHandle; const NewName, NewDescription: SystemString): Boolean;
     function ItemFastInsertNew(const fieldPos, InsertHeaderPos: Int64; const DBItemName, DBItemDescription: SystemString; var ItemHnd: TItemHandle): Boolean;
     function ItemFastCreate(const fPos: Int64; const DBItemName, DBItemDescription: SystemString; var ItemHnd: TItemHandle): Boolean;
-    function ItemFastOpen(const fPos: Int64; var ItemHnd: TItemHandle): Boolean;
+    function ItemFastOpen(const hPos: Int64; var ItemHnd: TItemHandle): Boolean;
     function ItemFastResetBody(const fPos: Int64): Boolean;
     function ItemFastExists(const fieldPos: Int64; const DBItemName: SystemString): Boolean;
     function ItemFastFindFirst(const fieldPos: Int64; const DBItemName: SystemString; var ItemSearchHandle: TItemSearch): Boolean;
@@ -250,6 +253,7 @@ type
 
     // item stream
     function ItemReadToStream(var ItemHnd: TItemHandle; stream: TCoreClassStream): Boolean; overload;
+    function ItemReadToStream(hPos: Int64; stream: TCoreClassStream): Boolean; overload;
     function ItemWriteFromStream(var ItemHnd: TItemHandle; stream: TCoreClassStream): Boolean; overload;
     function ItemReadToStream(const DBPath, DBItemName: SystemString; stream: TCoreClassStream): Boolean; overload;
     function ItemWriteFromStream(const DBPath, DBItemName: SystemString; stream: TCoreClassStream): Boolean; overload;
@@ -327,7 +331,7 @@ type
     procedure BuildDBCacheIntf;
     procedure FreeDBCacheIntf;
     procedure CleaupCache;
-    procedure SetPoolCache(const Value: Integer);
+    procedure ResetCachePool(const siz_: Integer);
     procedure UpdateIO; override;
     procedure Flush();
     function CacheStatus: SystemString;
@@ -339,7 +343,7 @@ type
     FLibList: TCoreClassStrings;
     FUseWildcard: Boolean;
     function GetItems(aIndex: Integer): TObjectDataManager;
-    function GetNames(AName: SystemString): TObjectDataManager;
+    function GetNames(Name_: SystemString): TObjectDataManager;
     procedure SetItems(aIndex: Integer; const Value: TObjectDataManager);
   public
     constructor Create(dbItemID: Byte);
@@ -348,18 +352,18 @@ type
     function NewDB(dbFile: SystemString; dbOnlyRead: Boolean): TObjectDataManager; overload;
     function NewDB(FixedStringL: Byte; dbFile: SystemString; dbOnlyRead: Boolean): TObjectDataManager; overload;
     function Open(dbFile: SystemString; dbOnlyRead: Boolean): TObjectDataManager;
-    procedure CloseDB(db: TObjectDataManager);
+    procedure CloseDB(Database: TObjectDataManager);
     procedure Clear;
     function Count: Integer;
     procedure Delete(aIndex: Integer);
-    procedure DeleteFromName(AName: SystemString);
+    procedure DeleteFromName(Name_: SystemString);
     procedure UpdateAll;
     procedure Disable;
     procedure Enabled;
 
     property LibList: TCoreClassStrings read FLibList;
     property Items[aIndex: Integer]: TObjectDataManager read GetItems write SetItems;
-    property Names[AName: SystemString]: TObjectDataManager read GetNames; default;
+    property Names[Name_: SystemString]: TObjectDataManager read GetNames; default;
     property UseWildcard: Boolean read FUseWildcard write FUseWildcard;
     property ID: Byte read FID write FID;
   end;
@@ -441,10 +445,10 @@ begin
 
   // check crc
   swapCompleted := 0;
-  if swapHnd.read(swapTotal, C_Integer_Size) = C_Integer_Size then
+  if swapHnd.Read(swapTotal, C_Integer_Size) = C_Integer_Size then
     while swapHnd.Position < swapHnd.Size do
       begin
-        if swapHnd.read(swapHead, SizeOf(swapHead)) <> SizeOf(swapHead) then
+        if swapHnd.Read(swapHead, SizeOf(swapHead)) <> SizeOf(swapHead) then
           begin
             DoStatus('%s CRC header errors, the database will be restored to previous state', [umlGetFileName(swapFileName).Text]);
             CheckSuccessed := False;
@@ -488,10 +492,10 @@ begin
         begin
           swapCompleted := 0;
           swapHnd.Position := 0;
-          if swapHnd.read(swapTotal, C_Integer_Size) = C_Integer_Size then
+          if swapHnd.Read(swapTotal, C_Integer_Size) = C_Integer_Size then
             while swapHnd.Position < swapHnd.Size do
               begin
-                swapHnd.read(swapHead, SizeOf(swapHead));
+                swapHnd.Read(swapHead, SizeOf(swapHead));
                 m64.Clear;
                 m64.CopyFrom(swapHnd, swapHead.Size);
 
@@ -530,7 +534,7 @@ begin
   umlDeleteFile(swapFileName);
 end;
 
-procedure TObjectDataCacheItem.write(var wVal: TItem);
+procedure TObjectDataCacheItem.Write(var wVal: TItem);
 begin
   Description := wVal.Description;
   ExtID := wVal.ExtID;
@@ -544,7 +548,7 @@ begin
   MemorySiz := 0;
 end;
 
-procedure TObjectDataCacheItem.read(var rVal: TItem);
+procedure TObjectDataCacheItem.Read(var rVal: TItem);
 begin
   rVal.Description := Description;
   rVal.ExtID := ExtID;
@@ -557,7 +561,7 @@ begin
   rVal.State := State;
 end;
 
-procedure TObjectDataCacheField.write(var wVal: TField);
+procedure TObjectDataCacheField.Write(var wVal: TField);
 begin
   UpFieldPOS := wVal.UpFieldPOS;
   Description := wVal.Description;
@@ -568,7 +572,7 @@ begin
   MemorySiz := 0;
 end;
 
-procedure TObjectDataCacheField.read(var rVal: TField);
+procedure TObjectDataCacheField.Read(var rVal: TField);
 begin
   rVal.UpFieldPOS := UpFieldPOS;
   rVal.Description := Description;
@@ -812,7 +816,7 @@ begin
   m64 := TMemoryStream64.CustomCreate(1024 * 1024);
   SaveToStream(m64);
   m64.Position := 0;
-  ParallelCompressStream(TSelectCompressionMethod.scmZLIB_Max, m64, stream);
+  ParallelCompressMemory(TSelectCompressionMethod.scmZLIB_Max, m64, stream);
   DisposeObject(m64);
 end;
 
@@ -1038,7 +1042,7 @@ begin
                 DestDB.UpdateIO;
                 fs := TCoreClassFileStream.Create(fn, fmCreate);
                 DestDB.StreamEngine.Position := 0;
-                ParallelCompressStream(TSelectCompressionMethod.scmZLIB_Max, TMemoryStream64(DestDB.StreamEngine), fs);
+                ParallelCompressMemory(TSelectCompressionMethod.scmZLIB_Max, TMemoryStream64(DestDB.StreamEngine), fs);
                 DisposeObject(fs);
                 DisposeObject(DestDB);
 
@@ -1055,7 +1059,7 @@ begin
   DestDB.UpdateIO;
   fs := TCoreClassFileStream.Create(fn, fmCreate);
   DestDB.StreamEngine.Position := 0;
-  ParallelCompressStream(TSelectCompressionMethod.scmZLIB_Max, TMemoryStream64(DestDB.StreamEngine), fs);
+  ParallelCompressMemory(TSelectCompressionMethod.scmZLIB_Max, TMemoryStream64(DestDB.StreamEngine), fs);
   DisposeObject(fs);
   DisposeObject(DestDB);
 end;
@@ -1144,6 +1148,26 @@ begin
       end;
       ItemClose(itmHnd);
     end;
+end;
+
+function TObjectDataManager.Is_BACKUP_Mode: Boolean;
+begin
+{$IFDEF ZDB_BACKUP}
+  Result := FDBHandle.IOHnd.Handle is TReliableFileStream;
+{$ELSE ZDB_BACKUP}
+  Result := False;
+{$ENDIF ZDB_BACKUP}
+end;
+
+function TObjectDataManager.Is_Flush_Mode: Boolean;
+begin
+{$IFDEF ZDB_PHYSICAL_FLUSH}
+  Result := (not FDBHandle.IOHnd.IsOnlyRead)
+    and (FDBHandle.IOHnd.IsOpen)
+    and (FDBHandle.IOHnd.Handle is TReliableFileStream);
+{$ELSE ZDB_PHYSICAL_FLUSH}
+  Result := False;
+{$ENDIF ZDB_PHYSICAL_FLUSH}
 end;
 
 function TObjectDataManager.isAbort: Boolean;
@@ -1571,10 +1595,10 @@ begin
   Result := db_ItemFastCreate(DBItemName, DBItemDescription, fPos, FDefaultItemID, ItemHnd, FDBHandle);
 end;
 
-function TObjectDataManager.ItemFastOpen(const fPos: Int64; var ItemHnd: TItemHandle): Boolean;
+function TObjectDataManager.ItemFastOpen(const hPos: Int64; var ItemHnd: TItemHandle): Boolean;
 begin
   Init_TTMDBItemHandle(ItemHnd);
-  Result := db_ItemFastOpen(fPos, FDefaultItemID, ItemHnd, FDBHandle);
+  Result := db_ItemFastOpen(hPos, FDefaultItemID, ItemHnd, FDBHandle);
 end;
 
 function TObjectDataManager.ItemFastResetBody(const fPos: Int64): Boolean;
@@ -1690,6 +1714,16 @@ begin
   sour.SeekStart();
   Result := stream.CopyFrom(sour, sour.Size) = sour.Size;
   DisposeObject(sour);
+end;
+
+function TObjectDataManager.ItemReadToStream(hPos: Int64; stream: TCoreClassStream): Boolean;
+var
+  ItemHnd: TItemHandle;
+begin
+  Result := ItemFastOpen(hPos, ItemHnd);
+  if not Result then
+      Exit;
+  Result := ItemReadToStream(ItemHnd, stream);
 end;
 
 function TObjectDataManager.ItemWriteFromStream(var ItemHnd: TItemHandle; stream: TCoreClassStream): Boolean;
@@ -1976,8 +2010,6 @@ begin
 end;
 
 procedure TObjectDataManagerOfCache.ItemReadProc(fPos: Int64; var rVal: TItem; var Done: Boolean);
-var
-  p: PObjectDataCacheItem;
 begin
   HeaderReadProc(fPos, rVal.RHeader, Done);
 
@@ -2030,11 +2062,11 @@ begin
   if p = nil then
     begin
       new(p);
-      p^.write(wVal);
+      p^.Write(wVal);
       FItemCache.Add(fPos, p, False);
     end
   else
-      p^.write(wVal);
+      p^.Write(wVal);
 
   p^.State := DB_Item_ok;
 end;
@@ -2061,14 +2093,14 @@ begin
           if Done then
             begin
               new(p);
-              p^.read(rVal);
+              p^.Read(rVal);
               FItemCache.Add(fPos, p, False);
               p^.State := DB_Item_ok;
             end;
         end;
     end
   else
-      p^.read(rVal);
+      p^.Read(rVal);
 end;
 
 procedure TObjectDataManagerOfCache.PrepareFieldWriteProc(fPos: Int64; var wVal: TField; var Done: Boolean);
@@ -2140,11 +2172,11 @@ begin
   if p = nil then
     begin
       new(p);
-      p^.write(wVal);
+      p^.Write(wVal);
       FFieldCache.Add(fPos, p, False);
     end
   else
-      p^.write(wVal);
+      p^.Write(wVal);
 
   p^.State := DB_Field_ok;
 end;
@@ -2171,14 +2203,14 @@ begin
           if Done then
             begin
               new(p);
-              p^.read(rVal);
+              p^.Read(rVal);
               FFieldCache.Add(fPos, p, False);
               p^.State := DB_Item_ok;
             end;
         end;
     end
   else
-      p^.read(rVal);
+      p^.Read(rVal);
 end;
 
 procedure TObjectDataManagerOfCache.PrepareTMDBWriteProc(fPos: Int64; const wVal: PObjectDataHandle; var Done: Boolean);
@@ -2234,23 +2266,23 @@ procedure TObjectDataManagerOfCache.DoOpenBefore;
 begin
   inherited DoOpenBefore;
 
-  FHeaderCache := TInt64HashPointerList.CustomCreate(10 * 10000);
+  FHeaderCache := TInt64HashPointerList.CustomCreate(if_(FDBHandle.IOHnd.Handle is TReliableFileStream, 10 * 10000, 1 * 10000));
   FHeaderCache.AutoFreeData := True;
   FHeaderCache.AccessOptimization := True;
 
-  FItemBlockCache := TInt64HashPointerList.CustomCreate(10 * 10000);
+  FItemBlockCache := TInt64HashPointerList.CustomCreate(if_(FDBHandle.IOHnd.Handle is TReliableFileStream, 10 * 10000, 1 * 10000));
   FItemBlockCache.AutoFreeData := True;
   FItemBlockCache.AccessOptimization := True;
 
-  FItemCache := TInt64HashPointerList.CustomCreate(10 * 10000);
+  FItemCache := TInt64HashPointerList.CustomCreate(if_(FDBHandle.IOHnd.Handle is TReliableFileStream, 10 * 10000, 1 * 10000));
   FItemCache.AutoFreeData := True;
   FItemCache.AccessOptimization := True;
 
-  FFieldCache := TInt64HashPointerList.CustomCreate(10 * 10000);
+  FFieldCache := TInt64HashPointerList.CustomCreate(if_(FDBHandle.IOHnd.Handle is TReliableFileStream, 10 * 10000, 1 * 10000));
   FFieldCache.AutoFreeData := True;
   FFieldCache.AccessOptimization := True;
 
-  FPrepareWritePool := TInt64HashObjectList.CustomCreate(40 * 10000);
+  FPrepareWritePool := TInt64HashObjectList.CustomCreate(if_(FDBHandle.IOHnd.Handle is TReliableFileStream, 4 * 10 * 10000, 4 * 1 * 10000));
   FPrepareWritePool.AutoFreeData := True;
   FPrepareWritePool.AccessOptimization := True;
 
@@ -2348,14 +2380,14 @@ begin
   FPrepareWritePool.Clear;
 end;
 
-procedure TObjectDataManagerOfCache.SetPoolCache(const Value: Integer);
+procedure TObjectDataManagerOfCache.ResetCachePool(const siz_: Integer);
 begin
   CleaupCache();
-  FHeaderCache.SetHashBlockCount(Value);
-  FItemBlockCache.SetHashBlockCount(Value);
-  FItemCache.SetHashBlockCount(Value);
-  FFieldCache.SetHashBlockCount(Value);
-  FPrepareWritePool.SetHashBlockCount(Value * 4);
+  FHeaderCache.SetHashBlockCount(if_(FDBHandle.IOHnd.Handle is TReliableFileStream, siz_, 1 * 10000));
+  FItemBlockCache.SetHashBlockCount(if_(FDBHandle.IOHnd.Handle is TReliableFileStream, siz_, 1 * 10000));
+  FItemCache.SetHashBlockCount(if_(FDBHandle.IOHnd.Handle is TReliableFileStream, siz_, 1 * 10000));
+  FFieldCache.SetHashBlockCount(if_(FDBHandle.IOHnd.Handle is TReliableFileStream, siz_, 1 * 10000));
+  FPrepareWritePool.SetHashBlockCount(if_(FDBHandle.IOHnd.Handle is TReliableFileStream, 4 * siz_, 4 * 1 * 10000));
 end;
 
 procedure TObjectDataManagerOfCache.UpdateIO;
@@ -2373,7 +2405,7 @@ var
   swapHnd: TCoreClassFileStream;
   swapHead: TSwapHead;
 begin
-  // update db header
+  // update Database header
   inherited UpdateIO;
 
   if (not FDBHandle.IOHnd.IsOnlyRead)
@@ -2390,7 +2422,7 @@ begin
             swapHnd := TCoreClassFileStream.Create(swapFileName, fmCreate);
 
             swapTotal := FPrepareWritePool.Count;
-            swapHnd.write(swapTotal, C_Integer_Size);
+            swapHnd.Write(swapTotal, C_Integer_Size);
 
             i := 0;
             p := FPrepareWritePool.FirstPtr;
@@ -2403,8 +2435,8 @@ begin
                 swapHead.Size := m64.Size;
                 swapHead.MD5 := umlMD5(m64.Memory, m64.Size);
                 swapHead.Position := p^.i64;
-                swapHnd.write(swapHead, SizeOf(swapHead));
-                swapHnd.write(m64.Memory^, m64.Size);
+                swapHnd.Write(swapHead, SizeOf(swapHead));
+                swapHnd.Write(m64.Memory^, m64.Size);
                 inc(i);
                 p := p^.Next;
               end;
@@ -2420,7 +2452,7 @@ begin
         begin
           m64 := TMemoryStream64(p^.Data);
           FDBHandle.IOHnd.Handle.Position := p^.i64;
-          FDBHandle.IOHnd.Handle.write(m64.Memory^, m64.Size);
+          FDBHandle.IOHnd.Handle.Write(m64.Memory^, m64.Size);
           inc(i);
           p := p^.Next;
         end;
@@ -2444,13 +2476,13 @@ begin
   Result := TObjectDataManager(FLibList.Objects[aIndex]);
 end;
 
-function TObjectDataMarshal.GetNames(AName: SystemString): TObjectDataManager;
+function TObjectDataMarshal.GetNames(Name_: SystemString): TObjectDataManager;
 var
   i: Integer;
   aUName: SystemString;
 begin
   Result := nil;
-  aUName := GetAbsoluteFileName(AName);
+  aUName := GetAbsoluteFileName(Name_);
   if FLibList.Count > 0 then
     begin
       if FUseWildcard then
@@ -2597,13 +2629,13 @@ begin
     end;
 end;
 
-procedure TObjectDataMarshal.CloseDB(db: TObjectDataManager);
+procedure TObjectDataMarshal.CloseDB(Database: TObjectDataManager);
 var
   i: Integer;
 begin
   i := 0;
   while i < Count do
-    if Items[i] = db then
+    if Items[i] = Database then
         Delete(i)
     else
         inc(i);
@@ -2629,12 +2661,12 @@ begin
   FLibList.Delete(aIndex);
 end;
 
-procedure TObjectDataMarshal.DeleteFromName(AName: SystemString);
+procedure TObjectDataMarshal.DeleteFromName(Name_: SystemString);
 var
   i: Integer;
   aUName: SystemString;
 begin
-  aUName := GetAbsoluteFileName(AName);
+  aUName := GetAbsoluteFileName(Name_);
   if FLibList.Count > 0 then
     begin
       if FUseWildcard then
@@ -2716,184 +2748,184 @@ end;
 
 procedure TestObjectData_(c: TObjectDataManagerClass);
 var
-  db: TObjectDataManager;
+  Database: TObjectDataManager;
   itmHnd1, itmHnd2, itmHnd3, itmHnd4: TItemHandle;
   buff: TBytes;
   nameL: U_StringArray;
   n: U_String;
 begin
-  db := c.CreateAsStream($FF, TMemoryStream64.CustomCreate($FFFF), '', 0, False, True, True);
+  Database := c.CreateAsStream($FF, TMemoryStream64.CustomCreate($FFFF), '', 0, False, True, True);
 
-  if db.CreateRootField('_RootField') then
+  if Database.CreateRootField('_RootField') then
       DoStatus('CreateRootField ok')
   else
       DoStatus('CreateRootField error');
-  if db.SetRootField('_RootField') then
+  if Database.SetRootField('_RootField') then
       DoStatus('SetRootField ok')
   else
       DoStatus('SetRootField error');
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
-  DoStatus('db size: %d', [db.Size]);
+  DoStatus('Database size: %d', [Database.Size]);
 
-  DoStatus('DB field test.');
-  db.CreateField('/a/b/c', '');
+  DoStatus('Database field test.');
+  Database.CreateField('/a/b/c', '');
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
-  if db.GetPathFieldHeaderCount('/a') <> 1 then
+  if Database.GetPathFieldHeaderCount('/a') <> 1 then
       DoStatus('create field error');
-  if db.GetPathFieldHeaderCount('/a/b') <> 1 then
+  if Database.GetPathFieldHeaderCount('/a/b') <> 1 then
       DoStatus('create field error');
-  if db.GetPathFieldHeaderCount('/a/b/c') <> 0 then
+  if Database.GetPathFieldHeaderCount('/a/b/c') <> 0 then
       DoStatus('create field error');
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
-  DoStatus('DB item body test');
-  if not db.ItemCreate('/a/b/c', '1', '', itmHnd1) then
+  DoStatus('Database item body test');
+  if not Database.ItemCreate('/a/b/c', '1', '', itmHnd1) then
       DoStatus('create item error');
   buff := umlBytesOf('1111');
-  db.ItemWrite(itmHnd1, length(buff), buff[0]);
+  Database.ItemWrite(itmHnd1, length(buff), buff[0]);
   DoStatus('item1 size:%d', [itmHnd1.Item.Size]);
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
-  if not db.ItemCreate('/a/b/c', '2', '', itmHnd2) then
+  if not Database.ItemCreate('/a/b/c', '2', '', itmHnd2) then
       DoStatus('create item error');
   buff := umlBytesOf('22222');
-  db.ItemWrite(itmHnd2, length(buff), buff[0]);
+  Database.ItemWrite(itmHnd2, length(buff), buff[0]);
   DoStatus('item2 size:%d', [itmHnd2.Item.Size]);
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
-  if not db.ItemCreate('/a/b/c', '3', '', itmHnd3) then
+  if not Database.ItemCreate('/a/b/c', '3', '', itmHnd3) then
       DoStatus('create item error');
   buff := umlBytesOf('3333');
-  db.ItemWrite(itmHnd3, length(buff), buff[0]);
+  Database.ItemWrite(itmHnd3, length(buff), buff[0]);
   DoStatus('item3 size:%d', [itmHnd3.Item.Size]);
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
-  if not db.ItemCreate('/a/b/c', '4', '', itmHnd4) then
+  if not Database.ItemCreate('/a/b/c', '4', '', itmHnd4) then
       DoStatus('create item error');
   buff := umlBytesOf('44444444');
-  db.ItemWrite(itmHnd4, length(buff), buff[0]);
+  Database.ItemWrite(itmHnd4, length(buff), buff[0]);
   DoStatus('item4 size:%d', [itmHnd4.Item.Size]);
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
   buff := umlBytesOf('t12345');
-  db.ItemWrite(itmHnd1, length(buff), buff[0]);
-  db.ItemSeekStart(itmHnd1);
+  Database.ItemWrite(itmHnd1, length(buff), buff[0]);
+  Database.ItemSeekStart(itmHnd1);
   SetLength(buff, itmHnd1.Item.Size);
-  db.ItemRead(itmHnd1, length(buff), buff[0]);
+  Database.ItemRead(itmHnd1, length(buff), buff[0]);
   if umlStringOf(buff).Same('1111t12345') then
       DoStatus('test fragment buffer ok!');
   DoStatus('item1 size:%d', [itmHnd1.Item.Size]);
 
-  db.ItemClose(itmHnd1);
-  db.ItemClose(itmHnd2);
-  db.ItemClose(itmHnd3);
-  db.ItemClose(itmHnd4);
+  Database.ItemClose(itmHnd1);
+  Database.ItemClose(itmHnd2);
+  Database.ItemClose(itmHnd3);
+  Database.ItemClose(itmHnd4);
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
-  if not db.GetPathFieldHeaderNames('/a/b/c', nameL) then
+  if not Database.GetPathFieldHeaderNames('/a/b/c', nameL) then
       DoStatus('get field list error');
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
-  if db.GetItemSize('/a/b/c', nameL[0]) <> 10 then
+  if Database.GetItemSize('/a/b/c', nameL[0]) <> 10 then
       DoStatus('item body error');
-  if db.GetItemSize('/a/b/c', nameL[1]) <> 5 then
+  if Database.GetItemSize('/a/b/c', nameL[1]) <> 5 then
       DoStatus('item body error');
-  if db.GetItemSize('/a/b/c', nameL[2]) <> 4 then
+  if Database.GetItemSize('/a/b/c', nameL[2]) <> 4 then
       DoStatus('item body error');
-  if db.GetItemSize('/a/b/c', nameL[3]) <> 8 then
+  if Database.GetItemSize('/a/b/c', nameL[3]) <> 8 then
       DoStatus('item body error');
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
-  DoStatus('DB item delete test');
+  DoStatus('Database item delete test');
 
-  db.ItemDelete('/a/b/c', '3');
-  if not db.GetPathFieldHeaderNames('/a/b/c', nameL) then
+  Database.ItemDelete('/a/b/c', '3');
+  if not Database.GetPathFieldHeaderNames('/a/b/c', nameL) then
       DoStatus('get field list error');
 
-  if db.GetItemSize('/a/b/c', nameL[0]) <> 10 then
+  if Database.GetItemSize('/a/b/c', nameL[0]) <> 10 then
       DoStatus('item body error');
-  if db.GetItemSize('/a/b/c', nameL[1]) <> 5 then
+  if Database.GetItemSize('/a/b/c', nameL[1]) <> 5 then
       DoStatus('item body error');
-  if db.GetItemSize('/a/b/c', nameL[2]) <> 8 then
+  if Database.GetItemSize('/a/b/c', nameL[2]) <> 8 then
       DoStatus('item body error');
 
-  db.ItemDelete('/a/b/c', '1');
-  if not db.GetPathFieldHeaderNames('/a/b/c', nameL) then
+  Database.ItemDelete('/a/b/c', '1');
+  if not Database.GetPathFieldHeaderNames('/a/b/c', nameL) then
       DoStatus('get field list error');
 
-  if db.GetItemSize('/a/b/c', nameL[0]) <> 5 then
+  if Database.GetItemSize('/a/b/c', nameL[0]) <> 5 then
       DoStatus('item body error');
-  if db.GetItemSize('/a/b/c', nameL[1]) <> 8 then
+  if Database.GetItemSize('/a/b/c', nameL[1]) <> 8 then
       DoStatus('item body error');
 
-  db.ItemDelete('/a/b/c', '2');
-  if not db.GetPathFieldHeaderNames('/a/b/c', nameL) then
+  Database.ItemDelete('/a/b/c', '2');
+  if not Database.GetPathFieldHeaderNames('/a/b/c', nameL) then
       DoStatus('get field list error');
 
-  if db.GetItemSize('/a/b/c', nameL[0]) <> 8 then
+  if Database.GetItemSize('/a/b/c', nameL[0]) <> 8 then
       DoStatus('item body error');
 
-  db.ItemDelete('/a/b/c', '4');
-  if not db.GetPathFieldHeaderNames('/a/b/c', nameL) then
+  Database.ItemDelete('/a/b/c', '4');
+  if not Database.GetPathFieldHeaderNames('/a/b/c', nameL) then
       DoStatus('get field list error');
 
   if length(nameL) = 0 then
       DoStatus('delete test done!');
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
-  DoStatus('DB field delete test');
+  DoStatus('Database field delete test');
 
-  if not db.GetPathFieldHeaderNames('/a/b', nameL) then
+  if not Database.GetPathFieldHeaderNames('/a/b', nameL) then
       DoStatus('get field list error');
   if (length(nameL) <> 1) then
       DoStatus('get field list error')
   else if nameL[0] = 'c' then
       DoStatus('test field delete ok');
 
-  db.FieldDelete('/a/b', 'c');
-  if not db.GetPathFieldHeaderNames('/a/b', nameL) then
+  Database.FieldDelete('/a/b', 'c');
+  if not Database.GetPathFieldHeaderNames('/a/b', nameL) then
       DoStatus('get field list error');
-  if db.GetPathFieldHeaderCount('/a/b') <> 0 then
+  if Database.GetPathFieldHeaderCount('/a/b') <> 0 then
       DoStatus('delete field error');
 
-  db.FieldDelete('/a', 'b');
-  if db.GetPathFieldHeaderCount('/a/b') <> 0 then
+  Database.FieldDelete('/a', 'b');
+  if Database.GetPathFieldHeaderCount('/a/b') <> 0 then
       DoStatus('delete field error');
-  db.FieldDelete('/', 'a');
-  if db.GetPathFieldHeaderCount('/') <> 0 then
+  Database.FieldDelete('/', 'a');
+  if Database.GetPathFieldHeaderCount('/') <> 0 then
       DoStatus('delete field error');
 
   if length(nameL) = 0 then
       DoStatus('field delete test done!');
 
-  if db is TObjectDataManagerOfCache then
-      DoStatus(TObjectDataManagerOfCache(db).CacheStatus);
+  if Database is TObjectDataManagerOfCache then
+      DoStatus(TObjectDataManagerOfCache(Database).CacheStatus);
 
-  DisposeObject(db);
+  DisposeObject(Database);
 end;
 
 procedure TestObjectData();
@@ -2904,6 +2936,7 @@ end;
 
 initialization
 
+Internal_ObjectDataMarshal := nil;
 ObjectDataMarshal();
 
 finalization

@@ -24,7 +24,7 @@ unit CoreClasses;
 
 interface
 
-uses SysUtils, Classes, Types,
+uses SysUtils, Classes, Types, Variants,
   {$IFDEF Parallel}
   {$IFNDEF FPC}
   {$IFDEF SystemParallel}
@@ -48,6 +48,13 @@ type
   PTimeTick = ^TTimeTick;
   TSeekOrigin = Classes.TSeekOrigin;
   TNotify = Classes.TNotifyEvent;
+  TArrayBool = Array of Boolean;
+  TArrayInt64 = Array of Int64;
+  TArrayUInt64 = Array of UInt64;
+  TInt64Buffer = Array [0 .. MaxInt div SizeOf(Int64) - 1] of Int64;
+  PInt64Buffer = ^TInt64Buffer;
+  TUInt64Buffer = Array [0 .. MaxInt div SizeOf(UInt64) - 1] of UInt64;
+  PUInt64Buffer = ^TUInt64Buffer;
 
   TCoreClassObject = TObject;
   TCoreClassPersistent = TPersistent;
@@ -72,8 +79,8 @@ type
 
   TCoreClassInterfacedObject = class(TInterfacedObject)
   protected
-    function _AddRef: longint; {$IFNDEF WINDOWS} cdecl {$ELSE} stdcall {$ENDIF};
-    function _Release: longint; {$IFNDEF WINDOWS} cdecl {$ELSE} stdcall {$ENDIF};
+    function _AddRef: longint; {$IFNDEF WINDOWS} cdecl {$ELSE WINDOWS} stdcall {$ENDIF WINDOWS};
+    function _Release: longint; {$IFNDEF WINDOWS} cdecl {$ELSE WINDOWS} stdcall {$ENDIF WINDOWS};
   public
     procedure AfterConstruction; override;
     procedure BeforeDestruction; override;
@@ -102,14 +109,14 @@ type
     procedure BeforeDestruction; override;
   end;
 
-  TGenericsList<t>=class(System.Generics.Collections.TList<t>)
+  TGenericsList<t> = class(System.Generics.Collections.TList<t>)
   private type
     TGArry = array of t;
   public var Arry:TGArry;
     function ListData: Pointer;
   end;
 
-  TGenericsObjectList<t:class>=class(System.Generics.Collections.TList<t>)
+  TGenericsObjectList<t: class> = class(System.Generics.Collections.TList<t>)
   private type
     TGArry = array of t;
   public var Arry:TGArry;
@@ -142,7 +149,8 @@ type
     procedure Delete(index: Integer);
     procedure Clear;
   end;
-
+{$EndRegion 'core defines + class'}
+{$Region 'Critical'}
   TSoftCritical = class(TCoreClassObject)
   private
     L: Boolean;
@@ -184,8 +192,10 @@ type
     property V: T_ read GetValue write SetValue;
     property Value: T_ read GetValue write SetValue;
   end;
+  // Bool
   TAtomBoolean = {$IFDEF FPC}specialize {$ENDIF FPC}TAtomVar<Boolean>;
   TAtomBool = TAtomBoolean;
+  // number
   TAtomSmallInt = {$IFDEF FPC}specialize {$ENDIF FPC}TAtomVar<SmallInt>;
   TAtomShortInt = {$IFDEF FPC}specialize {$ENDIF FPC}TAtomVar<ShortInt>;
   TAtomInteger = {$IFDEF FPC}specialize {$ENDIF FPC}TAtomVar<Integer>;
@@ -202,15 +212,17 @@ type
   TAtomUInt32 = TAtomCardinal;
   TAtomDWord = TAtomCardinal;
   TAtomUInt64 = {$IFDEF FPC}specialize {$ENDIF FPC}TAtomVar<UInt64>;
+  // float
   TAtomSingle = {$IFDEF FPC}specialize {$ENDIF FPC}TAtomVar<Single>;
   TAtomFloat = TAtomSingle;
   TAtomDouble = {$IFDEF FPC}specialize {$ENDIF FPC}TAtomVar<Double>;
   TAtomExtended = {$IFDEF FPC}specialize {$ENDIF FPC}TAtomVar<Extended>;
+  // string
   TAtomString = {$IFDEF FPC}specialize {$ENDIF FPC}TAtomVar<string>;
 
   TCritical = class(TCritical_)
   private
-    LNum: TAtomInt;
+    LNum: Integer;
   public
     constructor Create;
     destructor Destroy; override;
@@ -218,26 +230,255 @@ type
     procedure Release;
     procedure Enter;
     procedure Leave;
+    procedure Lock;
+    procedure UnLock;
     function IsBusy: Boolean;
     property Busy: Boolean read IsBusy;
+    // atom
+    procedure Inc_(var x: Int64); overload;
+    procedure Inc_(var x: Int64; const v: Int64); overload;
+    procedure Dec_(var x: Int64); overload;
+    procedure Dec_(var x: Int64; const v: Int64); overload;
+    procedure Inc_(var x: UInt64); overload;
+    procedure Inc_(var x: UInt64; const v: UInt64); overload;
+    procedure Dec_(var x: UInt64); overload;
+    procedure Dec_(var x: UInt64; const v: UInt64); overload;
+    procedure Inc_(var x: Integer); overload;
+    procedure Inc_(var x: Integer; const v:Integer); overload;
+    procedure Dec_(var x: Integer); overload;
+    procedure Dec_(var x: Integer; const v:Integer); overload;
+    procedure Inc_(var x: Cardinal); overload;
+    procedure Inc_(var x: Cardinal; const v:Cardinal); overload;
+    procedure Dec_(var x: Cardinal); overload;
+    procedure Dec_(var x: Cardinal; const v:Cardinal); overload;
+  end;
+{$EndRegion 'Critical'}
+{$Region 'OrderStruct'}
+  {$IFDEF FPC}generic{$ENDIF FPC}TOrderStruct<T_> = class(TCoreClassObject)
+  public type
+    T = T_;
+    PT_ = ^T_;
+    POrderStruct_ = ^TOrderStruct_;
+    TOrderStruct_ = record
+      Data: T_;
+      Next: POrderStruct_;
+    end;
+    TOnFreeOrderStruct = procedure(var p: T_) of object;
+  private
+    FFirst: POrderStruct_;
+    FLast: POrderStruct_;
+    FNum: NativeInt;
+    FOnFreeOrderStruct: TOnFreeOrderStruct;
+    procedure DoInternalFree(p: POrderStruct_);
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    procedure DoFree(var Data: T_); virtual;
+    procedure Clear;
+    property Current: POrderStruct_ read FFirst;
+    procedure Next;
+    procedure Push(Data: T_);
+    property Num: NativeInt read FNum;
+    property OnFreeOrderStruct: TOnFreeOrderStruct read FOnFreeOrderStruct write FOnFreeOrderStruct;
+    property OnFree: TOnFreeOrderStruct read FOnFreeOrderStruct write FOnFreeOrderStruct;
   end;
 
-  TComputeThread = class;
+  {$IFDEF FPC}generic{$ENDIF FPC}TOrderPtrStruct<T_> = class(TCoreClassObject)
+  public type
+    T = T_;
+    PT_ = ^T_;
+    POrderPtrStruct_ = ^TOrderPtrStruct_;
+    TOrderPtrStruct_ = record
+      Data: PT_;
+      Next: POrderPtrStruct_;
+    end;
+    TOnFreeOrderPtrStruct = procedure(p: PT_) of object;
+  private
+    FFirst: POrderPtrStruct_;
+    FLast: POrderPtrStruct_;
+    FNum: NativeInt;
+    FOnFreeOrderStruct: TOnFreeOrderPtrStruct;
+    procedure DoInternalFree(p: POrderPtrStruct_);
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    procedure DoFree(Data: PT_); virtual;
+    procedure Clear;
+    property Current: POrderPtrStruct_ read FFirst;
+    procedure Next;
+    procedure Push(Data: T_);
+    procedure PushPtr(Data: PT_);
+    property Num: NativeInt read FNum;
+    property OnFreeOrderStruct: TOnFreeOrderPtrStruct read FOnFreeOrderStruct write FOnFreeOrderStruct;
+    property OnFree: TOnFreeOrderPtrStruct read FOnFreeOrderStruct write FOnFreeOrderStruct;
+  end;
 
-  TRunWithThreadCall = procedure(ThSender: TComputeThread);
-  TRunWithThreadMethod = procedure(ThSender: TComputeThread) of object;
+  {$IFDEF FPC}generic{$ENDIF FPC}TCriticalOrderStruct<T_> = class(TCoreClassObject)
+  public type
+    T = T_;
+    PT_ = ^T_;
+    POrderStruct_ = ^TOrderStruct_;
+    TOrderStruct_ = record
+      Data: T_;
+      Next: POrderStruct_;
+    end;
+    TOnFreeCriticalOrderStruct = procedure(var p: T_) of object;
+  private
+    FCritical: TCritical;
+    FFirst: POrderStruct_;
+    FLast: POrderStruct_;
+    FNum: NativeInt;
+    FOnFreeCriticalOrderStruct: TOnFreeCriticalOrderStruct;
+    procedure DoInternalFree(p: POrderStruct_);
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    procedure DoFree(var Data: T_); virtual;
+    procedure Clear;
+    function GetCurrent: POrderStruct_;
+    property Current: POrderStruct_ read GetCurrent;
+    procedure Next;
+    procedure Push(Data: T_);
+    function GetNum: NativeInt;
+    property Num: NativeInt read GetNum;
+    property OnFreeCriticalOrderStruct: TOnFreeCriticalOrderStruct read FOnFreeCriticalOrderStruct write FOnFreeCriticalOrderStruct;
+    property OnFree: TOnFreeCriticalOrderStruct read FOnFreeCriticalOrderStruct write FOnFreeCriticalOrderStruct;
+  end;
+
+  {$IFDEF FPC}generic{$ENDIF FPC}TCriticalOrderPtrStruct<T_> = class(TCoreClassObject)
+  public type
+    T = T_;
+    PT_ = ^T_;
+    POrderPtrStruct_ = ^TOrderPtrStruct_;
+    TOrderPtrStruct_ = record
+      Data: PT_;
+      Next: POrderPtrStruct_;
+    end;
+    TOnFreeCriticalOrderPtrStruct = procedure(p: PT_) of object;
+  private
+    FCritical: TCritical;
+    FFirst: POrderPtrStruct_;
+    FLast: POrderPtrStruct_;
+    FNum: NativeInt;
+    FOnFreeCriticalOrderStruct: TOnFreeCriticalOrderPtrStruct;
+    procedure DoInternalFree(p: POrderPtrStruct_);
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    procedure DoFree(Data: PT_); virtual;
+    procedure Clear;
+    function GetCurrent: POrderPtrStruct_;
+    property Current: POrderPtrStruct_ read GetCurrent;
+    procedure Next;
+    procedure Push(Data: T_);
+    procedure PushPtr(Data: PT_);
+    function GetNum: NativeInt;
+    property Num: NativeInt read GetNum;
+    property OnFreeCriticalOrderStruct: TOnFreeCriticalOrderPtrStruct read FOnFreeCriticalOrderStruct write FOnFreeCriticalOrderStruct;
+    property OnFree: TOnFreeCriticalOrderPtrStruct read FOnFreeCriticalOrderStruct write FOnFreeCriticalOrderStruct;
+  end;
+
+{$EndRegion 'OrderStruct'}
+{$Region 'ThreadPost'}
+  TThreadPostCall1 = procedure();
+  TThreadPostCall2 = procedure(Data1: Pointer);
+  TThreadPostCall3 = procedure(Data1: Pointer; Data2: TCoreClassObject; Data3: Variant);
+  TThreadPostCall4 = procedure(Data1: Pointer; Data2: TCoreClassObject);
+  TThreadPostMethod1 = procedure() of object;
+  TThreadPostMethod2 = procedure(Data1: Pointer) of object;
+  TThreadPostMethod3 = procedure(Data1: Pointer; Data2: TCoreClassObject; Data3: Variant) of object;
+  TThreadPostMethod4 = procedure(Data1: Pointer; Data2: TCoreClassObject) of object;
+{$IFDEF FPC}
+  TThreadPostProc1 = procedure() is nested;
+  TThreadPostProc2 = procedure(Data1: Pointer) is nested;
+  TThreadPostProc3 = procedure(Data1: Pointer; Data2: TCoreClassObject; Data3: Variant) is nested;
+  TThreadPostProc4 = procedure(Data1: Pointer; Data2: TCoreClassObject) is nested;
+{$ELSE FPC}
+  TThreadPostProc1 = reference to procedure();
+  TThreadPostProc2 = reference to procedure(Data1: Pointer);
+  TThreadPostProc3 = reference to procedure(Data1: Pointer; Data2: TCoreClassObject; Data3: Variant);
+  TThreadPostProc4 = reference to procedure(Data1: Pointer; Data2: TCoreClassObject);
+{$ENDIF FPC}
+
+  TThreadPostData = record
+    OnCall1: TThreadPostCall1;
+    OnCall2: TThreadPostCall2;
+    OnCall3: TThreadPostCall3;
+    OnCall4: TThreadPostCall4;
+    OnMethod1: TThreadPostMethod1;
+    OnMethod2: TThreadPostMethod2;
+    OnMethod3: TThreadPostMethod3;
+    OnMethod4: TThreadPostMethod4;
+    OnProc1: TThreadPostProc1;
+    OnProc2: TThreadPostProc2;
+    OnProc3: TThreadPostProc3;
+    OnProc4: TThreadPostProc4;
+    Data1: Pointer;
+    Data2: TCoreClassObject;
+    Data3: Variant;
+    procedure Init;
+  end;
+
+  TThreadPostDataOrder = {$IFDEF FPC}specialize {$ENDIF FPC} TOrderPtrStruct<TThreadPostData>;
+
+  TThreadPost = class(TCoreClassObject)
+  protected
+    FCritical: TCritical;
+    FThreadID: TThreadID;
+    FSyncPool: TThreadPostDataOrder;
+    FProgressing: TAtomBool;
+    FOneStep: Boolean;
+    FResetRandomSeed: Boolean;
+    procedure FreeThreadProgressPostData(p: TThreadPostDataOrder.PT_);
+  public
+    constructor Create(ThreadID_: TThreadID);
+    destructor Destroy; override;
+    property ThreadID: TThreadID read FThreadID write FThreadID;
+    property OneStep: Boolean read FOneStep write FOneStep;
+    property ResetRandomSeed: Boolean read FResetRandomSeed write FResetRandomSeed;
+
+    function Count: Integer;
+    function Busy: Boolean;
+
+    function Progress(ThreadID_: TThreadID): Integer; overload;
+    function Progress(Thread_: TThread): Integer; overload;
+    function Progress(): Integer; overload;
+
+    // post thread synchronization
+    procedure PostC1(OnSync: TThreadPostCall1);
+    procedure PostC2(Data1: Pointer; OnSync: TThreadPostCall2);
+    procedure PostC3(Data1: Pointer; Data2: TCoreClassObject; Data3: Variant; OnSync: TThreadPostCall3);
+    procedure PostC4(Data1: Pointer; Data2: TCoreClassObject; OnSync: TThreadPostCall4);
+
+    procedure PostM1(OnSync: TThreadPostMethod1);
+    procedure PostM2(Data1: Pointer; OnSync: TThreadPostMethod2);
+    procedure PostM3(Data1: Pointer; Data2: TCoreClassObject; Data3: Variant; OnSync: TThreadPostMethod3);
+    procedure PostM4(Data1: Pointer; Data2: TCoreClassObject; OnSync: TThreadPostMethod4);
+
+    procedure PostP1(OnSync: TThreadPostProc1);
+    procedure PostP2(Data1: Pointer; OnSync: TThreadPostProc2);
+    procedure PostP3(Data1: Pointer; Data2: TCoreClassObject; Data3: Variant; OnSync: TThreadPostProc3);
+    procedure PostP4(Data1: Pointer; Data2: TCoreClassObject; OnSync: TThreadPostProc4);
+  end;
+
+{$EndRegion 'ThreadPost'}
+{$Region 'ComputeThread'}
+  TCompute = class;
+
+  TRunWithThreadCall = procedure(ThSender: TCompute);
+  TRunWithThreadMethod = procedure(ThSender: TCompute) of object;
   TRunWithThreadCall_NP = procedure();
   TRunWithThreadMethod_NP = procedure() of object;
   {$IFDEF FPC}
-  TRunWithThreadProc = procedure(ThSender: TComputeThread) is nested;
+  TRunWithThreadProc = procedure(ThSender: TCompute) is nested;
   TRunWithThreadProc_NP = procedure() is nested;
   {$ELSE FPC}
-  TRunWithThreadProc = reference to procedure(ThSender: TComputeThread);
+  TRunWithThreadProc = reference to procedure(ThSender: TCompute);
   TRunWithThreadProc_NP = reference to procedure();
   {$ENDIF FPC}
 
-  TComputeThread = class(TCoreClassThread)
-  private var
+  TCompute = class(TCoreClassThread)
+  private
     OnRunCall: TRunWithThreadCall;
     OnRunMethod: TRunWithThreadMethod;
     OnRunProc: TRunWithThreadProc;
@@ -247,6 +488,7 @@ type
     OnDoneCall: TRunWithThreadCall;
     OnDoneMethod: TRunWithThreadMethod;
     OnDoneProc: TRunWithThreadProc;
+    FRndInstance: Pointer;
   protected
     procedure Execute; override;
     procedure Done_Sync;
@@ -263,30 +505,60 @@ type
     class function GetParallelGranularity(): Integer;
     class function GetMaxActivtedParallel(): Integer;
 
-    // synchronization
+    // build-in synchronization Proc
     class procedure Sync(const OnRun_: TRunWithThreadProc_NP); overload;
     class procedure Sync(const Thread_: TThread; OnRun_: TRunWithThreadProc_NP); overload;
-
-    // asynchronous
+    // build-in synchronization call
+    class procedure SyncC(OnRun_: TRunWithThreadCall_NP); overload;
+    class procedure SyncC(const Thread_: TThread; OnRun_: TRunWithThreadCall_NP); overload;
+    // build-in synchronization method
+    class procedure SyncM(OnRun_: TRunWithThreadMethod_NP); overload;
+    class procedure SyncM(const Thread_: TThread; OnRun_: TRunWithThreadMethod_NP); overload;
+    // build-in synchronization Proc
+    class procedure SyncP(const OnRun_: TRunWithThreadProc_NP); overload;
+    class procedure SyncP(const Thread_: TThread; OnRun_: TRunWithThreadProc_NP); overload;
+    // build-in asynchronous call
     class procedure RunC(const Data: Pointer; const Obj: TCoreClassObject; const OnRun, OnDone: TRunWithThreadCall); overload;
     class procedure RunC(const Data: Pointer; const Obj: TCoreClassObject; const OnRun: TRunWithThreadCall); overload;
     class procedure RunC(const OnRun: TRunWithThreadCall); overload;
     class procedure RunC_NP(const OnRun: TRunWithThreadCall_NP); overload;
+    // build-in asynchronous methoc
     class procedure RunM(const Data: Pointer; const Obj: TCoreClassObject; const OnRun, OnDone: TRunWithThreadMethod); overload;
     class procedure RunM(const Data: Pointer; const Obj: TCoreClassObject; const OnRun: TRunWithThreadMethod); overload;
     class procedure RunM(const OnRun: TRunWithThreadMethod); overload;
     class procedure RunM_NP(const OnRun: TRunWithThreadMethod_NP); overload;
+    // build-in asynchronous proc
     class procedure RunP(const Data: Pointer; const Obj: TCoreClassObject; const OnRun, OnDone: TRunWithThreadProc); overload;
     class procedure RunP(const Data: Pointer; const Obj: TCoreClassObject; const OnRun: TRunWithThreadProc); overload;
     class procedure RunP(const OnRun: TRunWithThreadProc); overload;
     class procedure RunP_NP(const OnRun: TRunWithThreadProc_NP); overload;
+
+    // main thread
+    class procedure ProgressPost();
+    // post to main thread call
+    class procedure PostC1(OnSync: TThreadPostCall1);
+    class procedure PostC2(Data1: Pointer; OnSync: TThreadPostCall2);
+    class procedure PostC3(Data1: Pointer; Data2: TCoreClassObject; Data3: Variant; OnSync: TThreadPostCall3);
+    class procedure PostC4(Data1: Pointer; Data2: TCoreClassObject; OnSync: TThreadPostCall4);
+    // post to main thread method
+    class procedure PostM1(OnSync: TThreadPostMethod1);
+    class procedure PostM2(Data1: Pointer; OnSync: TThreadPostMethod2);
+    class procedure PostM3(Data1: Pointer; Data2: TCoreClassObject; Data3: Variant; OnSync: TThreadPostMethod3);
+    class procedure PostM4(Data1: Pointer; Data2: TCoreClassObject; OnSync: TThreadPostMethod4);
+    // post to main thread proc
+    class procedure PostP1(OnSync: TThreadPostProc1);
+    class procedure PostP2(Data1: Pointer; OnSync: TThreadPostProc2);
+    class procedure PostP3(Data1: Pointer; Data2: TCoreClassObject; Data3: Variant; OnSync: TThreadPostProc3);
+    class procedure PostP4(Data1: Pointer; Data2: TCoreClassObject; OnSync: TThreadPostProc4);
   end;
 
-  // TComputeThread alias
-  TCompute = TComputeThread;
-
+  // TCompute alias
+  TComputeThread = TCompute;
+{$EndRegion 'ComputeThread'}
+{$Region 'MT19937Random'}
   TMT19937Random = class(TCoreClassObject)
   private
+    FInternalCritical: TCritical;
     FRndInstance: Pointer;
     function GetSeed: Integer;
     procedure SetSeed(const Value: Integer);
@@ -305,11 +577,13 @@ type
     procedure RandF(dest: PSingle; num: NativeInt); overload;
     function RandD: Double; overload;
     procedure RandD(dest: PDouble; num: NativeInt); overload;
+    function RandBool: Boolean;
     property seed: Integer read GetSeed write SetSeed;
   end;
 
   TRandom = TMT19937Random;
-
+{$EndRegion 'MT19937Random'}
+{$Region 'LineProcessor'}
   {$IFDEF FPC}generic{$ENDIF FPC}TLineProcessor<T_> = class
   public type
     TTArry_ = array [0 .. 0] of T_;
@@ -331,8 +605,7 @@ type
     procedure Process(const vp: PT_; const v: T_); virtual;
     property Value: T_ read FValue;
   end;
-
-{$EndRegion 'core defines + class'}
+{$EndRegion 'LineProcessor'}
 {$Region 'core const'}
 const
   {$IF Defined(WIN32)}
@@ -370,6 +643,8 @@ const
   CPU64 = {$IFDEF CPU64}True{$ELSE CPU64}False{$IFEND CPU64};
   X64 = CPU64;
 
+  IsDebug = {$IFDEF DEBUG}True{$ELSE DEBUG}False{$ENDIF DEBUG};
+
   // timetick define
   C_Tick_Second = TTimeTick(1000);
   C_Tick_Minute = TTimeTick(C_Tick_Second) * 60;
@@ -394,27 +669,50 @@ const
   fmShareDenyNone  = SysUtils.fmShareDenyNone;
 {$EndRegion 'core const'}
 {$Region 'Parallel API'}
+
+function GetParallelGranularity: Integer;
+procedure SetParallelGranularity(Thread_Num: Integer);
+
 {$IFDEF FPC}
+  // freepascal
 type
   TFPCParallelForProcedure32 = procedure(pass: Integer) is nested;
   TFPCParallelForProcedure64 = procedure(pass: Int64) is nested;
-procedure FPCParallelFor(parallel: Boolean; OnFor:TFPCParallelForProcedure32; b, e: Integer); overload;
-procedure FPCParallelFor(parallel: Boolean; OnFor:TFPCParallelForProcedure64; b, e: Int64); overload;
-procedure FPCParallelFor(OnFor:TFPCParallelForProcedure32; b, e: Integer); overload;
-procedure FPCParallelFor(OnFor:TFPCParallelForProcedure64; b, e: Int64); overload;
-procedure FPCParallelFor(b, e: Integer; OnFor:TFPCParallelForProcedure32); overload;
-procedure FPCParallelFor(b, e: Int64; OnFor:TFPCParallelForProcedure64); overload;
-procedure FPCParallelFor(parallel: Boolean; b, e: Integer; OnFor:TFPCParallelForProcedure32); overload;
-procedure FPCParallelFor(parallel: Boolean; b, e: Int64; OnFor:TFPCParallelForProcedure64); overload;
+procedure FPCParallelFor_Block(parallel: Boolean; b, e: Integer; OnFor: TFPCParallelForProcedure32); overload;
+procedure FPCParallelFor_Block(parallel: Boolean; b, e: Int64; OnFor: TFPCParallelForProcedure64); overload;
+procedure FPCParallelFor_Fold(parallel: Boolean; b, e: Integer; OnFor: TFPCParallelForProcedure32); overload;
+procedure FPCParallelFor_Fold(parallel: Boolean; b, e: Int64; OnFor: TFPCParallelForProcedure64); overload;
+procedure FPCParallelFor(parallel: Boolean; b, e: Integer; OnFor: TFPCParallelForProcedure32); overload;
+procedure FPCParallelFor(parallel: Boolean; b, e: Int64; OnFor: TFPCParallelForProcedure64); overload;
+procedure FPCParallelFor(b, e: Integer; OnFor: TFPCParallelForProcedure32); overload;
+procedure FPCParallelFor(b, e: Int64; OnFor: TFPCParallelForProcedure64); overload;
+procedure FPCParallelFor(OnFor: TFPCParallelForProcedure32; b, e: Integer); overload;
+procedure FPCParallelFor(OnFor: TFPCParallelForProcedure64; b, e: Int64); overload;
+procedure FPCParallelFor(parallel: Boolean; OnFor: TFPCParallelForProcedure32; b, e: Integer); overload;
+procedure FPCParallelFor(parallel: Boolean; OnFor: TFPCParallelForProcedure64; b, e: Int64); overload;
+procedure ParallelFor(parallel: Boolean; b, e: Integer; OnFor: TFPCParallelForProcedure32); overload;
+procedure ParallelFor(parallel: Boolean; b, e: Int64; OnFor: TFPCParallelForProcedure64); overload;
+procedure ParallelFor(b, e: Integer; OnFor: TFPCParallelForProcedure32); overload;
+procedure ParallelFor(b, e: Int64; OnFor: TFPCParallelForProcedure64); overload;
+procedure ParallelFor(OnFor: TFPCParallelForProcedure32; b, e: Integer); overload;
+procedure ParallelFor(OnFor: TFPCParallelForProcedure64; b, e: Int64); overload;
+procedure ParallelFor(parallel: Boolean; OnFor: TFPCParallelForProcedure32; b, e: Integer); overload;
+procedure ParallelFor(parallel: Boolean; OnFor: TFPCParallelForProcedure64; b, e: Int64); overload;
 {$ELSE FPC}
 type
+  // delphi
 {$IFDEF SystemParallel}
   TDelphiParallelForProcedure32 = TProc<Integer>;
   TDelphiParallelForProcedure64 = TProc<Int64>;
 {$ELSE SystemParallel}
   TDelphiParallelForProcedure32 = reference to procedure(pass: Integer);
   TDelphiParallelForProcedure64 = reference to procedure(pass: Int64);
+  procedure DelphiParallelFor_Block(parallel: Boolean; b, e: Integer; OnFor: TDelphiParallelForProcedure32); overload;
+  procedure DelphiParallelFor_Block(parallel: Boolean; b, e: Int64; OnFor: TDelphiParallelForProcedure64); overload;
+  procedure DelphiParallelFor_Fold(parallel: Boolean; b, e: Integer; OnFor: TDelphiParallelForProcedure32); overload;
+  procedure DelphiParallelFor_Fold(parallel: Boolean; b, e: Int64; OnFor: TDelphiParallelForProcedure64); overload;
 {$ENDIF SystemParallel}
+
 procedure DelphiParallelFor(parallel: Boolean; b, e: Integer; OnFor: TDelphiParallelForProcedure32); overload;
 procedure DelphiParallelFor(parallel: Boolean; b, e: Int64; OnFor: TDelphiParallelForProcedure64); overload;
 procedure DelphiParallelFor(b, e: Integer; OnFor: TDelphiParallelForProcedure32); overload;
@@ -423,7 +721,16 @@ procedure DelphiParallelFor(OnFor: TDelphiParallelForProcedure32; b, e: Integer)
 procedure DelphiParallelFor(OnFor: TDelphiParallelForProcedure64; b, e: Int64); overload;
 procedure DelphiParallelFor(parallel: Boolean; OnFor: TDelphiParallelForProcedure32; b, e: Integer); overload;
 procedure DelphiParallelFor(parallel: Boolean; OnFor: TDelphiParallelForProcedure64; b, e: Int64); overload;
+procedure ParallelFor(parallel: Boolean; b, e: Integer; OnFor: TDelphiParallelForProcedure32); overload;
+procedure ParallelFor(parallel: Boolean; b, e: Int64; OnFor: TDelphiParallelForProcedure64); overload;
+procedure ParallelFor(b, e: Integer; OnFor: TDelphiParallelForProcedure32); overload;
+procedure ParallelFor(b, e: Int64; OnFor: TDelphiParallelForProcedure64); overload;
+procedure ParallelFor(OnFor: TDelphiParallelForProcedure32; b, e: Integer); overload;
+procedure ParallelFor(OnFor: TDelphiParallelForProcedure64; b, e: Int64); overload;
+procedure ParallelFor(parallel: Boolean; OnFor: TDelphiParallelForProcedure32; b, e: Integer); overload;
+procedure ParallelFor(parallel: Boolean; OnFor: TDelphiParallelForProcedure64; b, e: Int64); overload;
 {$ENDIF FPC}
+
 {$EndRegion 'Parallel API'}
 {$Region 'core api'}
 
@@ -434,15 +741,21 @@ procedure Nop;
 // process Synchronize
 procedure CheckThreadSynchronize; overload;
 function CheckThreadSynchronize(Timeout: Integer): Boolean; overload;
+procedure CheckThreadSync; overload;
+function CheckThreadSync(Timeout: Integer): Boolean; overload;
+procedure CheckThread; overload;
+function CheckThread(Timeout: Integer): Boolean; overload;
 
 // core thread pool
 procedure FreeCoreThreadPool;
 
 procedure DisposeObject(const Obj: TObject); overload;
 procedure DisposeObject(const objs: array of TObject); overload;
+procedure FreeObj(const Obj: TObject);
 procedure FreeObject(const Obj: TObject); overload;
 procedure FreeObject(const objs: array of TObject); overload;
 procedure DisposeObjectAndNil(var Obj);
+procedure FreeObjAndNil(var Obj);
 
 procedure LockObject(Obj: TObject);
 procedure UnLockObject(Obj: TObject);
@@ -469,7 +782,7 @@ procedure FillPtrByte(const dest:Pointer; Count: NativeUInt; const Value: Byte);
 procedure FillPtr(const dest:Pointer; Count: NativeUInt; const Value: Byte);
 procedure FillByte(const dest:Pointer; Count: NativeUInt; const Value: Byte);
 function CompareMemory(const p1, p2: Pointer; Count: NativeUInt): Boolean;
-procedure CopyPtr(const sour, dest:Pointer; Count: NativeUInt);
+procedure CopyPtr(const sour, dest: Pointer; Count: NativeUInt);
 
 procedure RaiseInfo(const n: string); overload;
 procedure RaiseInfo(const n: string; const Args: array of const); overload;
@@ -581,6 +894,8 @@ function if_(const bool_: Boolean; const True_, False_: Single): Single; overloa
 function if_(const bool_: Boolean; const True_, False_: Double): Double; overload;
 function if_(const bool_: Boolean; const True_, False_: string): string; overload;
 function ifv_(const bool_: Boolean; const True_, False_: Variant): Variant;
+function GetOffset(p_: Pointer; offset_: NativeInt): Pointer;
+function GetPtr(p_: Pointer; offset_: NativeInt): Pointer;
 
 {$EndRegion 'core api'}
 {$Region 'core var'}
@@ -592,6 +907,8 @@ var
 
   // DelphiParallelFor and FPCParallelFor work in parallel
   WorkInParallelCore: TAtomBool;
+  // same WorkInParallelCore
+  ParallelCore: TAtomBool;
 
   // default is True
   GlobalMemoryHook: TAtomBool;
@@ -601,6 +918,9 @@ var
 
   // The life time of working in asynchronous thread consistency,
   MT19937LifeTime: TTimeTick;
+
+  // MainThread TThreadPost
+  MainThreadProgress: TThreadPost;
 {$EndRegion 'core var'}
 
 implementation
@@ -634,6 +954,11 @@ begin
       DisposeObject(Obj);
 end;
 
+procedure FreeObj(const Obj: TObject);
+begin
+  DisposeObject(Obj);
+end;
+
 procedure FreeObject(const Obj: TObject);
 begin
   DisposeObject(Obj);
@@ -654,6 +979,11 @@ begin
       DisposeObject(TObject(Obj));
       TObject(Obj) := nil;
     end;
+end;
+
+procedure FreeObjAndNil(var Obj);
+begin
+  DisposeObjectAndNil(Obj);
 end;
 
 procedure LockObject(Obj: TObject);
@@ -696,6 +1026,11 @@ begin
 end;
 
 procedure FillPtrByte(const dest: Pointer; Count: NativeUInt; const Value: Byte);
+{$IFDEF FillPtr_Used_FillChar}
+begin
+  FillChar(dest^, Count, Value);
+end;
+{$ELSE FillPtr_Used_FillChar}
 var
   d: PByte;
   v: UInt64;
@@ -726,6 +1061,7 @@ begin
   if Count > 0 then
       d^ := Value;
 end;
+{$ENDIF FillPtr_Used_FillChar}
 
 procedure FillPtr(const dest:Pointer; Count: NativeUInt; const Value: Byte);
 begin
@@ -780,6 +1116,11 @@ begin;
 end;
 
 procedure CopyPtr(const sour, dest: Pointer; Count: NativeUInt);
+{$IFDEF CopyPtr_Used_Move}
+begin
+  Move(sour^, dest^, Count);
+end;
+{$ELSE CopyPtr_Used_Move}
 var
   s, d: NativeUInt;
 begin
@@ -848,6 +1189,7 @@ begin
           PByte(d)^ := PByte(s)^;
     end;
 end;
+{$ENDIF CopyPtr_Used_Move}
 
 procedure RaiseInfo(const n: string);
 begin
@@ -1012,6 +1354,7 @@ begin
   inherited Clear;
 end;
 
+{$INCLUDE CoreThreadPost.inc}
 {$INCLUDE CoreComputeThread.inc}
 
 {$IFDEF FPC}
@@ -1021,19 +1364,29 @@ end;
 {$ENDIF FPC}
 {$INCLUDE Core_AtomVar.inc}
 {$INCLUDE Core_LineProcessor.inc}
+{$INCLUDE Core_OrderData.inc}
 
+function GetParallelGranularity: Integer;
+begin
+  Result := ParallelGranularity;
+end;
+
+procedure SetParallelGranularity(Thread_Num: Integer);
+begin
+  ParallelGranularity := Thread_Num;
+end;
 
 procedure Nop;
 begin
 end;
 
-var
-  CheckThreadSynchronizeing: TAtomBool;
-
 procedure CheckThreadSynchronize;
 begin
   CheckThreadSynchronize(0);
 end;
+
+var
+  MainThSynchronizeRunning: Boolean;
 
 function CheckThreadSynchronize(Timeout: Integer): Boolean;
 begin
@@ -1044,40 +1397,68 @@ begin
     end
   else
     begin
-      if not CheckThreadSynchronizeing.V then
-        begin
-          CheckThreadSynchronizeing.V := True;
-          try
-              Result := CheckSynchronize(Timeout);
-          finally
-              CheckThreadSynchronizeing.V := False;
-          end;
-        end
-      else
+      if MainThSynchronizeRunning then
+        Exit;
+      MainThSynchronizeRunning := True;
+      MainThreadProgress.Progress(MainThreadID);
+      try
+        Result := CheckSynchronize(Timeout);
+      except
         Result := False;
+      end;
+      MainThSynchronizeRunning := False;
     end;
-  if Assigned(OnCheckThreadSynchronize) then
-    OnCheckThreadSynchronize();
+
+  if MainThSynchronizeRunning then
+    Exit;
+  MainThSynchronizeRunning := True;
+  try
+    if Assigned(OnCheckThreadSynchronize) then
+      OnCheckThreadSynchronize();
+  except
+  end;
+  MainThSynchronizeRunning := False;
+end;
+
+procedure CheckThreadSync;
+begin
+  CheckThreadSynchronize(0);
+end;
+
+function CheckThreadSync(Timeout: Integer): Boolean;
+begin
+  Result := CheckThreadSynchronize(Timeout);
+end;
+
+procedure CheckThread;
+begin
+  CheckThreadSynchronize(0);
+end;
+
+function CheckThread(Timeout: Integer): Boolean;
+begin
+  Result := CheckThreadSynchronize(Timeout);
 end;
 
 initialization
+  SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide, exOverflow, exUnderflow, exPrecision]);
   OnCheckThreadSynchronize := nil;
   WorkInParallelCore := TAtomBool.Create({$IFDEF FPC}True{$ELSE FPC}DebugHook = 0{$ENDIF FPC});
+  ParallelCore := WorkInParallelCore;
   GlobalMemoryHook := TAtomBool.Create(True);
-  CheckThreadSynchronizeing := TAtomBool.Create(False);
   Core_RunTime_Tick := C_Tick_Day * 3;
   Core_Step_Tick := TCoreClassThread.GetTickCount();
   InitCriticalLock();
   InitMT19937Rand();
-  SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide, exOverflow, exUnderflow, exPrecision]);
   CoreInitedTimeTick := GetTimeTick();
   InitCoreThreadPool(CpuCount);
+  MainThreadProgress := TThreadPost.Create(MainThreadID);
+  MainThSynchronizeRunning := False;
 finalization
   FreeCoreThreadPool;
+  MainThreadProgress.Free;
   FreeMT19937Rand();
   FreeCriticalLock;
-  CheckThreadSynchronizeing.Free;
-  CheckThreadSynchronizeing := nil;
   WorkInParallelCore.Free;
   WorkInParallelCore := nil;
   GlobalMemoryHook.Free;

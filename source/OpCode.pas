@@ -22,7 +22,7 @@ unit OpCode;
 
 interface
 
-uses SysUtils, Variants, Math, CoreClasses, PascalStrings, DoStatusIO, ListEngine, UnicodeMixedLib, DataFrameEngine;
+uses SysUtils, Variants, Math, CoreClasses, PascalStrings, DoStatusIO, ListEngine, UnicodeMixedLib;
 
 type
   TOpValueType = (
@@ -36,79 +36,102 @@ type
 
   TOpParam = array of Variant;
 
-  TOnOpCall = function(var Param: TOpParam): Variant;
-  TOnOpMethod = function(var Param: TOpParam): Variant of object;
-  TOnObjectOpCall = function(OpRunTime: TOpCustomRunTime; var Param: TOpParam): Variant;
-  TOnObjectOpMethod = function(OpRunTime: TOpCustomRunTime; var Param: TOpParam): Variant of object;
-
+  TOnOpCall = function(var OP_Param: TOpParam): Variant;
+  TOnOpMethod = function(var OP_Param: TOpParam): Variant of object;
+  TOnObjectOpCall = function(Sender: TOpCustomRunTime; var OP_Param: TOpParam): Variant;
+  TOnObjectOpMethod = function(Sender: TOpCustomRunTime; var OP_Param: TOpParam): Variant of object;
 {$IFDEF FPC}
-  TOnOpProc = function(var Param: TOpParam): Variant is nested;
-  TOnObjectOpProc = function(OpRunTime: TOpCustomRunTime; var Param: TOpParam): Variant is nested;
+  TOnOpProc = function(var OP_Param: TOpParam): Variant is nested;
+  TOnObjectOpProc = function(Sender: TOpCustomRunTime; var OP_Param: TOpParam): Variant is nested;
 {$ELSE FPC}
-  TOnOpProc = reference to function(var Param: TOpParam): Variant;
-  TOnObjectOpProc = reference to function(OpRunTime: TOpCustomRunTime; var Param: TOpParam): Variant;
+  TOnOpProc = reference to function(var OP_Param: TOpParam): Variant;
+  TOnObjectOpProc = reference to function(Sender: TOpCustomRunTime; var OP_Param: TOpParam): Variant;
 {$ENDIF FPC}
-  POpRTData = ^TOpRTData;
 
   TOpRTData = record
     Param: TOpParam;
     Name, Description, Category: SystemString;
     OnOpCall: TOnOpCall;
     OnOpMethod: TOnOpMethod;
+    OnOpProc: TOnOpProc;
     OnObjectOpCall: TOnObjectOpCall;
     OnObjectOpMethod: TOnObjectOpMethod;
-    OnOpProc: TOnOpProc;
     OnObjectOpProc: TOnObjectOpProc;
     procedure Init;
   end;
+
+  POpRTData = ^TOpRTData;
 
   TOpCustomRunTime = class(TCoreClassObject)
   protected
     procedure FreeNotifyProc(p: Pointer);
 
-    function DoInt(var Param: TOpParam): Variant;
-    function DoFrac(var Param: TOpParam): Variant;
-    function DoExp(var Param: TOpParam): Variant;
-    function DoCos(var Param: TOpParam): Variant;
-    function DoSin(var Param: TOpParam): Variant;
-    function DoLn(var Param: TOpParam): Variant;
-    function DoArcTan(var Param: TOpParam): Variant;
-    function DoSqrt(var Param: TOpParam): Variant;
-    function DoSqr(var Param: TOpParam): Variant;
-    function DoTan(var Param: TOpParam): Variant;
-    function DoRound(var Param: TOpParam): Variant;
-    function DoTrunc(var Param: TOpParam): Variant;
-    function DoDeg(var Param: TOpParam): Variant;
-    function DoPower(var Param: TOpParam): Variant;
+    function DoInt(var OP_Param: TOpParam): Variant;
+    function DoFrac(var OP_Param: TOpParam): Variant;
+    function DoExp(var OP_Param: TOpParam): Variant;
+    function DoCos(var OP_Param: TOpParam): Variant;
+    function DoSin(var OP_Param: TOpParam): Variant;
+    function DoLn(var OP_Param: TOpParam): Variant;
+    function DoArcTan(var OP_Param: TOpParam): Variant;
+    function DoSqrt(var OP_Param: TOpParam): Variant;
+    function DoSqr(var OP_Param: TOpParam): Variant;
+    function DoTan(var OP_Param: TOpParam): Variant;
+    function DoRound(var OP_Param: TOpParam): Variant;
+    function DoTrunc(var OP_Param: TOpParam): Variant;
+    function DoDeg(var OP_Param: TOpParam): Variant;
+    function DoPower(var OP_Param: TOpParam): Variant;
 
-    function DoPI(var Param: TOpParam): Variant;
-    function DoBool(var Param: TOpParam): Variant;
-    function DoTrue(var Param: TOpParam): Variant;
-    function DoFalse(var Param: TOpParam): Variant;
-    function DoRColor(var Param: TOpParam): Variant;
-    function DoVec2(var Param: TOpParam): Variant;
-    function DoVec3(var Param: TOpParam): Variant;
-    function DoVec4(var Param: TOpParam): Variant;
+    function DoSingle(var OP_Param: TOpParam): Variant;
+    function DoDouble(var OP_Param: TOpParam): Variant;
+    function DoExtended(var OP_Param: TOpParam): Variant;
+    function DoByte(var OP_Param: TOpParam): Variant;
+    function DoWord(var OP_Param: TOpParam): Variant;
+    function DoCardinal(var OP_Param: TOpParam): Variant;
+    function DoUInt64(var OP_Param: TOpParam): Variant;
+    function DoShortInt(var OP_Param: TOpParam): Variant;
+    function DoSmallInt(var OP_Param: TOpParam): Variant;
+    function DoInteger(var OP_Param: TOpParam): Variant;
+    function DoInt64(var OP_Param: TOpParam): Variant;
 
-    function DoRandom(var Param: TOpParam): Variant;
-    function DoRandomFloat(var Param: TOpParam): Variant;
+    function DoROL8(var OP_Param: TOpParam): Variant;
+    function DoROL16(var OP_Param: TOpParam): Variant;
+    function DoROL32(var OP_Param: TOpParam): Variant;
+    function DoROL64(var OP_Param: TOpParam): Variant;
+    function DoROR8(var OP_Param: TOpParam): Variant;
+    function DoROR16(var OP_Param: TOpParam): Variant;
+    function DoROR32(var OP_Param: TOpParam): Variant;
+    function DoROR64(var OP_Param: TOpParam): Variant;
+    function DoEndian16(var OP_Param: TOpParam): Variant;
+    function DoEndian32(var OP_Param: TOpParam): Variant;
+    function DoEndian64(var OP_Param: TOpParam): Variant;
+    function DoEndianU16(var OP_Param: TOpParam): Variant;
+    function DoEndianU32(var OP_Param: TOpParam): Variant;
+    function DoEndianU64(var OP_Param: TOpParam): Variant;
+    function DoSAR16(var OP_Param: TOpParam): Variant;
+    function DoSAR32(var OP_Param: TOpParam): Variant;
+    function DoSAR64(var OP_Param: TOpParam): Variant;
 
-    function DoMax(var Param: TOpParam): Variant;
-    function DoMin(var Param: TOpParam): Variant;
-    function DoClamp(var Param: TOpParam): Variant;
-    function DoIfThen(var Param: TOpParam): Variant;
+    function DoPI(var OP_Param: TOpParam): Variant;
+    function DoBool(var OP_Param: TOpParam): Variant;
+    function DoTrue(var OP_Param: TOpParam): Variant;
+    function DoFalse(var OP_Param: TOpParam): Variant;
+    function DoRColor(var OP_Param: TOpParam): Variant;
+    function DoVec2(var OP_Param: TOpParam): Variant;
+    function DoVec3(var OP_Param: TOpParam): Variant;
+    function DoVec4(var OP_Param: TOpParam): Variant;
 
-    function DoStr(var Param: TOpParam): Variant;
+    function DoRandom(var OP_Param: TOpParam): Variant;
+    function DoRandomFloat(var OP_Param: TOpParam): Variant;
 
-    function DoGetFirst(var Param: TOpParam): Variant;
-    function DoDeleteFirst(var Param: TOpParam): Variant;
-    function DoGetLast(var Param: TOpParam): Variant;
-    function DoDeleteLast(var Param: TOpParam): Variant;
+    function DoMax(var OP_Param: TOpParam): Variant;
+    function DoMin(var OP_Param: TOpParam): Variant;
+    function DoClamp(var OP_Param: TOpParam): Variant;
+    function DoIfThen(var OP_Param: TOpParam): Variant;
 
-    function DoMultiple(var Param: TOpParam): Variant;
-    function DoPrint(var Param: TOpParam): Variant;
+    function DoStr(var OP_Param: TOpParam): Variant;
 
-    procedure InternalReg; virtual;
+    function DoMultiple(var OP_Param: TOpParam): Variant;
+
   public
     ProcList: THashList;
     Trigger: POpRTData;
@@ -117,8 +140,10 @@ type
     UserData: Pointer;
 
     constructor Create;
-    constructor CustomCreate(maxHashLen: Integer); virtual;
+    constructor CustomCreate(maxHashSiz_: Integer); virtual;
     destructor Destroy; override;
+    procedure Clean; virtual;
+    procedure PrepareRegistation; virtual;
 
     function GetProcDescription(ProcName: SystemString): SystemString; overload;
     function GetAllProcDescription(): TPascalStringList; overload;
@@ -335,7 +360,7 @@ var
 
 implementation
 
-uses Geometry2DUnit, Geometry3DUnit;
+uses Geometry2DUnit, Geometry3DUnit, DataFrameEngine;
 
 type
   opRegData = record
@@ -357,9 +382,9 @@ begin
   Category := '';
   OnOpCall := nil;
   OnOpMethod := nil;
+  OnOpProc := nil;
   OnObjectOpCall := nil;
   OnObjectOpMethod := nil;
-  OnOpProc := nil;
   OnObjectOpProc := nil;
 end;
 
@@ -472,170 +497,310 @@ end;
 
 procedure TOpCustomRunTime.FreeNotifyProc(p: Pointer);
 begin
-  SetLength(POpRTData(p)^.Param, 0);
+  POpRTData(p)^.Init;
   Dispose(POpRTData(p));
 end;
 
-function TOpCustomRunTime.DoInt(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoInt(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := Int(v);
 end;
 
-function TOpCustomRunTime.DoFrac(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoFrac(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := Frac(v);
 end;
 
-function TOpCustomRunTime.DoExp(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoExp(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := Exp(v);
 end;
 
-function TOpCustomRunTime.DoCos(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoCos(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := Cos(v);
 end;
 
-function TOpCustomRunTime.DoSin(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoSin(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := Sin(v);
 end;
 
-function TOpCustomRunTime.DoLn(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoLn(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := ln(v);
 end;
 
-function TOpCustomRunTime.DoArcTan(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoArcTan(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := ArcTan(v);
 end;
 
-function TOpCustomRunTime.DoSqrt(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoSqrt(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := Sqrt(v);
 end;
 
-function TOpCustomRunTime.DoSqr(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoSqr(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := Sqr(v);
 end;
 
-function TOpCustomRunTime.DoTan(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoTan(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := Tan(v);
 end;
 
-function TOpCustomRunTime.DoRound(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoRound(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := Round(Double(v));
 end;
 
-function TOpCustomRunTime.DoTrunc(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoTrunc(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := Trunc(Double(v));
 end;
 
-function TOpCustomRunTime.DoDeg(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoDeg(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
   Result := NormalizeDegAngle(TGeoFloat(v));
 end;
 
-function TOpCustomRunTime.DoPower(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoPower(var OP_Param: TOpParam): Variant;
 var
   v: Variant;
   i: Integer;
 begin
-  if length(Param) = 2 then
-      Result := Power(Param[0], Param[1])
+  if length(OP_Param) = 2 then
+      Result := Power(OP_Param[0], OP_Param[1])
   else
       Result := 0;
 end;
 
-function TOpCustomRunTime.DoPI(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoSingle(var OP_Param: TOpParam): Variant;
+begin
+  Result := Single(OP_Param[0]);
+end;
+
+function TOpCustomRunTime.DoDouble(var OP_Param: TOpParam): Variant;
+begin
+  Result := Double(OP_Param[0]);
+end;
+
+function TOpCustomRunTime.DoExtended(var OP_Param: TOpParam): Variant;
+begin
+  Result := Extended(OP_Param[0]);
+end;
+
+function TOpCustomRunTime.DoByte(var OP_Param: TOpParam): Variant;
+begin
+  Result := Byte(OP_Param[0]);
+end;
+
+function TOpCustomRunTime.DoWord(var OP_Param: TOpParam): Variant;
+begin
+  Result := Word(OP_Param[0]);
+end;
+
+function TOpCustomRunTime.DoCardinal(var OP_Param: TOpParam): Variant;
+begin
+  Result := Cardinal(OP_Param[0]);
+end;
+
+function TOpCustomRunTime.DoUInt64(var OP_Param: TOpParam): Variant;
+begin
+  Result := UInt64(OP_Param[0]);
+end;
+
+function TOpCustomRunTime.DoShortInt(var OP_Param: TOpParam): Variant;
+begin
+  Result := ShortInt(OP_Param[0]);
+end;
+
+function TOpCustomRunTime.DoSmallInt(var OP_Param: TOpParam): Variant;
+begin
+  Result := SmallInt(OP_Param[0]);
+end;
+
+function TOpCustomRunTime.DoInteger(var OP_Param: TOpParam): Variant;
+begin
+  Result := Integer(OP_Param[0]);
+end;
+
+function TOpCustomRunTime.DoInt64(var OP_Param: TOpParam): Variant;
+begin
+  Result := Int64(OP_Param[0]);
+end;
+
+function TOpCustomRunTime.DoROL8(var OP_Param: TOpParam): Variant;
+begin
+  Result := ROL8(OP_Param[0], OP_Param[1]);
+end;
+
+function TOpCustomRunTime.DoROL16(var OP_Param: TOpParam): Variant;
+begin
+  Result := ROL16(OP_Param[0], OP_Param[1]);
+end;
+
+function TOpCustomRunTime.DoROL32(var OP_Param: TOpParam): Variant;
+begin
+  Result := ROL32(OP_Param[0], OP_Param[1]);
+end;
+
+function TOpCustomRunTime.DoROL64(var OP_Param: TOpParam): Variant;
+begin
+  Result := ROL64(OP_Param[0], OP_Param[1]);
+end;
+
+function TOpCustomRunTime.DoROR8(var OP_Param: TOpParam): Variant;
+begin
+  Result := ROR8(OP_Param[0], OP_Param[1]);
+end;
+
+function TOpCustomRunTime.DoROR16(var OP_Param: TOpParam): Variant;
+begin
+  Result := ROR16(OP_Param[0], OP_Param[1]);
+end;
+
+function TOpCustomRunTime.DoROR32(var OP_Param: TOpParam): Variant;
+begin
+  Result := ROR32(OP_Param[0], OP_Param[1]);
+end;
+
+function TOpCustomRunTime.DoROR64(var OP_Param: TOpParam): Variant;
+begin
+  Result := ROR64(OP_Param[0], OP_Param[1]);
+end;
+
+function TOpCustomRunTime.DoEndian16(var OP_Param: TOpParam): Variant;
+begin
+  Result := Endian(SmallInt(OP_Param[0]));
+end;
+
+function TOpCustomRunTime.DoEndian32(var OP_Param: TOpParam): Variant;
+begin
+  Result := Endian(Integer(OP_Param[0]));
+end;
+
+function TOpCustomRunTime.DoEndian64(var OP_Param: TOpParam): Variant;
+begin
+  Result := Endian(Int64(OP_Param[0]));
+end;
+
+function TOpCustomRunTime.DoEndianU16(var OP_Param: TOpParam): Variant;
+begin
+  Result := Endian(Word(OP_Param[0]));
+end;
+
+function TOpCustomRunTime.DoEndianU32(var OP_Param: TOpParam): Variant;
+begin
+  Result := Endian(Cardinal(OP_Param[0]));
+end;
+
+function TOpCustomRunTime.DoEndianU64(var OP_Param: TOpParam): Variant;
+begin
+  Result := Endian(UInt64(OP_Param[0]));
+end;
+
+function TOpCustomRunTime.DoSAR16(var OP_Param: TOpParam): Variant;
+begin
+  Result := SAR16(OP_Param[0], OP_Param[1]);
+end;
+
+function TOpCustomRunTime.DoSAR32(var OP_Param: TOpParam): Variant;
+begin
+  Result := SAR32(OP_Param[0], OP_Param[1]);
+end;
+
+function TOpCustomRunTime.DoSAR64(var OP_Param: TOpParam): Variant;
+begin
+  Result := SAR64(OP_Param[0], OP_Param[1]);
+end;
+
+function TOpCustomRunTime.DoPI(var OP_Param: TOpParam): Variant;
 begin
   Result := PI;
 end;
 
-function TOpCustomRunTime.DoBool(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoBool(var OP_Param: TOpParam): Variant;
   function v2b(const v: Variant): Boolean;
   var
     n: TPascalString;
@@ -662,22 +827,22 @@ var
   i: Integer;
 begin
   n := True;
-  for i := low(Param) to high(Param) do
-      n := n and v2b(Param[i]);
+  for i := low(OP_Param) to high(OP_Param) do
+      n := n and v2b(OP_Param[i]);
   Result := n;
 end;
 
-function TOpCustomRunTime.DoTrue(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoTrue(var OP_Param: TOpParam): Variant;
 begin
   Result := True;
 end;
 
-function TOpCustomRunTime.DoFalse(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoFalse(var OP_Param: TOpParam): Variant;
 begin
   Result := False;
 end;
 
-function TOpCustomRunTime.DoRColor(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoRColor(var OP_Param: TOpParam): Variant;
 var
   buff: array [0 .. 3] of SystemString;
   i: Integer;
@@ -686,13 +851,13 @@ begin
       buff[i] := '0.0';
   buff[3] := '1.0';
 
-  for i := Low(Param) to high(Param) do
-      buff[i] := VarToStr(Param[i]);
+  for i := Low(OP_Param) to high(OP_Param) do
+      buff[i] := VarToStr(OP_Param[i]);
 
   Result := Format('RColor(%s,%s,%s,%s)', [buff[0], buff[1], buff[2], buff[3]]);
 end;
 
-function TOpCustomRunTime.DoVec2(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoVec2(var OP_Param: TOpParam): Variant;
 var
   buff: array [0 .. 1] of SystemString;
   i: Integer;
@@ -700,13 +865,13 @@ begin
   for i := Low(buff) to high(buff) do
       buff[i] := '0.0';
 
-  for i := Low(Param) to high(Param) do
-      buff[i] := VarToStr(Param[i]);
+  for i := Low(OP_Param) to high(OP_Param) do
+      buff[i] := VarToStr(OP_Param[i]);
 
   Result := Format('Vec2(%s,%s)', [buff[0], buff[1]]);
 end;
 
-function TOpCustomRunTime.DoVec3(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoVec3(var OP_Param: TOpParam): Variant;
 var
   buff: array [0 .. 2] of SystemString;
   i: Integer;
@@ -714,13 +879,13 @@ begin
   for i := Low(buff) to high(buff) do
       buff[i] := '0.0';
 
-  for i := Low(Param) to high(Param) do
-      buff[i] := VarToStr(Param[i]);
+  for i := Low(OP_Param) to high(OP_Param) do
+      buff[i] := VarToStr(OP_Param[i]);
 
   Result := Format('Vec3(%s,%s,%s)', [buff[0], buff[1], buff[2]]);
 end;
 
-function TOpCustomRunTime.DoVec4(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoVec4(var OP_Param: TOpParam): Variant;
 var
   buff: array [0 .. 3] of SystemString;
   i: Integer;
@@ -728,20 +893,20 @@ begin
   for i := Low(buff) to high(buff) do
       buff[i] := '0.0';
 
-  for i := Low(Param) to high(Param) do
-      buff[i] := VarToStr(Param[i]);
+  for i := Low(OP_Param) to high(OP_Param) do
+      buff[i] := VarToStr(OP_Param[i]);
 
   Result := Format('Vec4(%s,%s,%s,%s)', [buff[0], buff[1], buff[2], buff[3]]);
 end;
 
-function TOpCustomRunTime.DoRandom(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoRandom(var OP_Param: TOpParam): Variant;
 var
   v: Integer;
   i: Integer;
 begin
   v := 0;
-  for i := low(Param) to high(Param) do
-      v := v + Param[i];
+  for i := low(OP_Param) to high(OP_Param) do
+      v := v + OP_Param[i];
 
   if v <> 0 then
       Result := MT19937Rand32(v)
@@ -749,161 +914,142 @@ begin
       Result := MT19937Rand32(MaxInt);
 end;
 
-function TOpCustomRunTime.DoRandomFloat(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoRandomFloat(var OP_Param: TOpParam): Variant;
 begin
   Result := MT19937RandF;
 end;
 
-function TOpCustomRunTime.DoMax(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoMax(var OP_Param: TOpParam): Variant;
 var
   i: Integer;
 begin
-  if length(Param) = 0 then
+  if length(OP_Param) = 0 then
     begin
       Result := NULL;
       Exit;
     end;
-  Result := Param[0];
-  for i := 1 to length(Param) - 1 do
-    if Param[i] > Result then
-        Result := Param[i];
+  Result := OP_Param[0];
+  for i := 1 to length(OP_Param) - 1 do
+    if OP_Param[i] > Result then
+        Result := OP_Param[i];
 end;
 
-function TOpCustomRunTime.DoMin(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoMin(var OP_Param: TOpParam): Variant;
 var
   i: Integer;
 begin
-  if length(Param) = 0 then
+  if length(OP_Param) = 0 then
     begin
       Result := NULL;
       Exit;
     end;
-  Result := Param[0];
-  for i := 1 to length(Param) - 1 do
-    if Param[i] < Result then
-        Result := Param[i];
+  Result := OP_Param[0];
+  for i := 1 to length(OP_Param) - 1 do
+    if OP_Param[i] < Result then
+        Result := OP_Param[i];
 end;
 
-function TOpCustomRunTime.DoClamp(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoClamp(var OP_Param: TOpParam): Variant;
 var
   minv_, maxv_: Variant;
 begin
-  if length(Param) <> 3 then
+  if length(OP_Param) <> 3 then
     begin
-      if length(Param) > 0 then
-          Result := Param[0]
+      if length(OP_Param) > 0 then
+          Result := OP_Param[0]
       else
           Result := NULL;
       Exit;
     end;
 
-  if Param[1] > Param[2] then
+  if OP_Param[1] > OP_Param[2] then
     begin
-      minv_ := Param[2];
-      maxv_ := Param[1];
+      minv_ := OP_Param[2];
+      maxv_ := OP_Param[1];
     end
   else
     begin
-      minv_ := Param[1];
-      maxv_ := Param[2];
+      minv_ := OP_Param[1];
+      maxv_ := OP_Param[2];
     end;
 
-  if Param[0] < minv_ then
+  if OP_Param[0] < minv_ then
       Result := minv_
-  else if Param[0] > maxv_ then
+  else if OP_Param[0] > maxv_ then
       Result := maxv_
   else
-      Result := Param[0];
+      Result := OP_Param[0];
 end;
 
-function TOpCustomRunTime.DoIfThen(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoIfThen(var OP_Param: TOpParam): Variant;
 begin
-  if length(Param) <> 3 then
+  if length(OP_Param) <> 3 then
     begin
       Result := NULL;
       Exit;
     end;
-  if Boolean(Param[0]) = True then
-      Result := Param[1]
+  if Boolean(OP_Param[0]) = True then
+      Result := OP_Param[1]
   else
-      Result := Param[2];
+      Result := OP_Param[2];
 end;
 
-function TOpCustomRunTime.DoStr(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoStr(var OP_Param: TOpParam): Variant;
 var
   n: TPascalString;
   i: Integer;
 begin
   n := '';
-  for i := low(Param) to high(Param) do
-      n.Append(VarToStr(Param[i]));
+  for i := low(OP_Param) to high(OP_Param) do
+      n.Append(VarToStr(OP_Param[i]));
   Result := n;
 end;
 
-function TOpCustomRunTime.DoGetFirst(var Param: TOpParam): Variant;
-begin
-  if length(Param) = 2 then
-      Result := umlGetFirstStr(VarToStr(Param[0]), VarToStr(Param[1])).Text
-  else
-      Result := '';
-end;
-
-function TOpCustomRunTime.DoDeleteFirst(var Param: TOpParam): Variant;
-begin
-  if length(Param) = 2 then
-      Result := umlDeleteFirstStr(VarToStr(Param[0]), VarToStr(Param[1])).Text
-  else
-      Result := '';
-end;
-
-function TOpCustomRunTime.DoGetLast(var Param: TOpParam): Variant;
-begin
-  if length(Param) = 2 then
-      Result := umlGetLastStr(VarToStr(Param[0]), VarToStr(Param[1])).Text
-  else
-      Result := '';
-end;
-
-function TOpCustomRunTime.DoDeleteLast(var Param: TOpParam): Variant;
-begin
-  if length(Param) = 2 then
-      Result := umlDeleteLastStr(VarToStr(Param[0]), VarToStr(Param[1])).Text
-  else
-      Result := '';
-end;
-
-function TOpCustomRunTime.DoMultiple(var Param: TOpParam): Variant;
+function TOpCustomRunTime.DoMultiple(var OP_Param: TOpParam): Variant;
 var
   i: Integer;
 begin
-  if length(Param) >= 2 then
+  if length(OP_Param) >= 2 then
     begin
       Result := True;
-      for i := 1 to length(Param) - 1 do
-          Result := Result and umlMultipleMatch(VarToStr(Param[0]), VarToStr(Param[i]));
+      for i := 1 to length(OP_Param) - 1 do
+          Result := Result and umlMultipleMatch(VarToStr(OP_Param[0]), VarToStr(OP_Param[i]));
     end
   else
       Result := True;
 end;
 
-function TOpCustomRunTime.DoPrint(var Param: TOpParam): Variant;
-var
-  i: Integer;
+constructor TOpCustomRunTime.Create;
 begin
-  for i := low(Param) to high(Param) do
-    begin
-      DoStatusNoLn(Param[i]);
-      if i < high(Param) then
-          DoStatusNoLn(#32);
-    end;
-
-  DoStatusNoLn;
-  Result := True;
+  CustomCreate(1024);
 end;
 
-procedure TOpCustomRunTime.InternalReg;
+constructor TOpCustomRunTime.CustomCreate(maxHashSiz_: Integer);
 begin
+  inherited Create;
+  ProcList := THashList.CustomCreate(maxHashSiz_);
+  ProcList.AutoFreeData := True;
+  ProcList.AccessOptimization := True;
   ProcList.OnFreePtr := {$IFDEF FPC}@{$ENDIF FPC}FreeNotifyProc;
+  Trigger := nil;
+  UserObject := nil;
+  UserData := nil;
+  PrepareRegistation;
+end;
+
+destructor TOpCustomRunTime.Destroy;
+begin
+  DisposeObject(ProcList);
+  inherited Destroy;
+end;
+
+procedure TOpCustomRunTime.Clean;
+begin
+  ProcList.Clear;
+end;
+
+procedure TOpCustomRunTime.PrepareRegistation;
+begin
   RegOpM('Int', 'Int(0..n): math function', {$IFDEF FPC}@{$ENDIF FPC}DoInt)^.Category := 'Base Math';
   RegOpM('Frac', 'Frac(0..n): math function', {$IFDEF FPC}@{$ENDIF FPC}DoFrac)^.Category := 'Base Math';
   RegOpM('Exp', 'Exp(0..n): math function', {$IFDEF FPC}@{$ENDIF FPC}DoExp)^.Category := 'Base Math';
@@ -919,14 +1065,42 @@ begin
   RegOpM('Deg', 'Deg(0..n): NormalizeDegAngle function', {$IFDEF FPC}@{$ENDIF FPC}DoDeg)^.Category := 'Base Math';
   RegOpM('Power', 'Power(float,float): Power: Raise base to any power function', {$IFDEF FPC}@{$ENDIF FPC}DoPower)^.Category := 'Base Math';
 
-  RegOpM('PI', 'PI(): return PI', {$IFDEF FPC}@{$ENDIF FPC}DoPI)^.Category := 'Base Math';
+  RegOpM('Single', 'Single(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoSingle)^.Category := 'Base Math';
+  RegOpM('Double', 'Double(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoDouble)^.Category := 'Base Math';
+  RegOpM('Float', 'Float(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoDouble)^.Category := 'Base Math';
+  RegOpM('Extended', 'Extended(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoExtended)^.Category := 'Base Math';
+  RegOpM('Byte', 'Byte(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoByte)^.Category := 'Base Math';
+  RegOpM('Word', 'Word(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoWord)^.Category := 'Base Math';
+  RegOpM('Cardinal', 'Cardinal(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoCardinal)^.Category := 'Base Math';
+  RegOpM('UInt64', 'UInt64(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoUInt64)^.Category := 'Base Math';
+  RegOpM('ShortInt', 'ShortInt(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoShortInt)^.Category := 'Base Math';
+  RegOpM('SmallInt', 'SmallInt(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoSmallInt)^.Category := 'Base Math';
+  RegOpM('Integer', 'Integer(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoInteger)^.Category := 'Base Math';
+  RegOpM('Int64', 'Int64(value): math function', {$IFDEF FPC}@{$ENDIF FPC}DoInt64)^.Category := 'Base Math';
 
+  RegOpM('ROL8', 'ROL8(byte,Shift): math function', {$IFDEF FPC}@{$ENDIF FPC}DoROL8)^.Category := 'Base Math';
+  RegOpM('ROL16', 'ROL16(word,Shift): math function', {$IFDEF FPC}@{$ENDIF FPC}DoROL16)^.Category := 'Base Math';
+  RegOpM('ROL32', 'ROL32(cardinal,Shift): math function', {$IFDEF FPC}@{$ENDIF FPC}DoROL32)^.Category := 'Base Math';
+  RegOpM('ROL64', 'ROL64(uint64,Shift): math function', {$IFDEF FPC}@{$ENDIF FPC}DoROL64)^.Category := 'Base Math';
+  RegOpM('ROR8', 'ROR8(byte,Shift): math function', {$IFDEF FPC}@{$ENDIF FPC}DoROR8)^.Category := 'Base Math';
+  RegOpM('ROR16', 'ROR16(word,Shift): math function', {$IFDEF FPC}@{$ENDIF FPC}DoROR16)^.Category := 'Base Math';
+  RegOpM('ROR32', 'ROR32(cardinal,Shift): math function', {$IFDEF FPC}@{$ENDIF FPC}DoROR32)^.Category := 'Base Math';
+  RegOpM('ROR64', 'ROR64(uint64,Shift): math function', {$IFDEF FPC}@{$ENDIF FPC}DoROR64)^.Category := 'Base Math';
+  RegOpM('Endian16', 'Endian16(smallint): math function', {$IFDEF FPC}@{$ENDIF FPC}DoEndian16)^.Category := 'Base Math';
+  RegOpM('Endian32', 'Endian32(integer): math function', {$IFDEF FPC}@{$ENDIF FPC}DoEndian32)^.Category := 'Base Math';
+  RegOpM('Endian64', 'Endian64(int64): math function', {$IFDEF FPC}@{$ENDIF FPC}DoEndian64)^.Category := 'Base Math';
+  RegOpM('EndianU16', 'EndianU16(word): math function', {$IFDEF FPC}@{$ENDIF FPC}DoEndianU16)^.Category := 'Base Math';
+  RegOpM('EndianU32', 'EndianU32(cardinal): math function', {$IFDEF FPC}@{$ENDIF FPC}DoEndianU32)^.Category := 'Base Math';
+  RegOpM('EndianU64', 'EndianU64(uint64): math function', {$IFDEF FPC}@{$ENDIF FPC}DoEndianU64)^.Category := 'Base Math';
+  RegOpM('SAR16', 'SAR16(word,Shift): math function', {$IFDEF FPC}@{$ENDIF FPC}DoSAR16)^.Category := 'Base Math';
+  RegOpM('SAR32', 'SAR32(cardinal,Shift): math function', {$IFDEF FPC}@{$ENDIF FPC}DoSAR32)^.Category := 'Base Math';
+  RegOpM('SAR64', 'SAR64(uint64,Shift): math function', {$IFDEF FPC}@{$ENDIF FPC}DoSAR64)^.Category := 'Base Math';
+
+  RegOpM('PI', 'PI(): return PI', {$IFDEF FPC}@{$ENDIF FPC}DoPI)^.Category := 'Base Math';
   RegOpM('Bool', 'Bool(n..n): convert any variant as bool', {$IFDEF FPC}@{$ENDIF FPC}DoBool)^.Category := 'Base Math';
   RegOpM('Boolean', 'Boolean(n..n): convert any variant as bool', {$IFDEF FPC}@{$ENDIF FPC}DoBool)^.Category := 'Base Math';
-
   RegOpM('True', 'True(): return true', {$IFDEF FPC}@{$ENDIF FPC}DoTrue)^.Category := 'Base Math';
   RegOpM('False', 'False(): return false', {$IFDEF FPC}@{$ENDIF FPC}DoFalse)^.Category := 'Base Math';
-
   RegOpM('RColor', 'RColor(R,G,B,A): return RColor string', {$IFDEF FPC}@{$ENDIF FPC}DoRColor)^.Category := 'Base Math';
   RegOpM('Vec2', 'Vec2(X,Y): return Vec2 string', {$IFDEF FPC}@{$ENDIF FPC}DoVec2)^.Category := 'Base Math';
   RegOpM('Vec3', 'Vec3(X,Y,Z): return Vec3 string', {$IFDEF FPC}@{$ENDIF FPC}DoVec3)^.Category := 'Base Math';
@@ -942,46 +1116,11 @@ begin
   RegOpM('IfThen', 'IfThen(bool, if true then of value, if false then of value): return if value', {$IFDEF FPC}@{$ENDIF FPC}DoIfThen)^.Category := 'Base Math';
 
   RegOpM('Str', 'Str(n..n): convert any variant as string', {$IFDEF FPC}@{$ENDIF FPC}DoStr)^.Category := 'Base String';
-  RegOpM('Base String', 'String(n..n): convert any variant as string', {$IFDEF FPC}@{$ENDIF FPC}DoStr)^.Category := 'Base String';
+  RegOpM('String', 'String(n..n): convert any variant as string', {$IFDEF FPC}@{$ENDIF FPC}DoStr)^.Category := 'Base String';
   RegOpM('Text', 'Text(n..n): convert any variant as string', {$IFDEF FPC}@{$ENDIF FPC}DoStr)^.Category := 'Base String';
-
-  RegOpM('GetFirst', 'GetFirst(string, split Char): return first split segment', {$IFDEF FPC}@{$ENDIF FPC}DoGetFirst)^.Category := 'Base String';
-  RegOpM('First', 'First(string, split Char): return first split segment', {$IFDEF FPC}@{$ENDIF FPC}DoGetFirst)^.Category := 'Base String';
-  RegOpM('DeleteFirst', 'DeleteFirst(string, split Char): return removed at after first split segment of value', {$IFDEF FPC}@{$ENDIF FPC}DoDeleteFirst)^.Category := 'Base String';
-  RegOpM('GetLast', 'GetLast(string, split Char): return last split segment', {$IFDEF FPC}@{$ENDIF FPC}DoGetLast)^.Category := 'Base String';
-  RegOpM('Last', 'Last(string, split Char): return last split segment', {$IFDEF FPC}@{$ENDIF FPC}DoGetLast)^.Category := 'Base String';
-  RegOpM('DeleteLast', 'DeleteLast(string, split Char): return removed at after last split segment of value', {$IFDEF FPC}@{$ENDIF FPC}DoDeleteLast)^.Category := 'Base String';
 
   RegOpM('MultipleMatch', 'MultipleMatch(multile exp, n..n): return bool', {$IFDEF FPC}@{$ENDIF FPC}DoMultiple)^.Category := 'Base String';
   RegOpM('Multiple', 'MultipleMatch(multile exp, n..n): return bool', {$IFDEF FPC}@{$ENDIF FPC}DoMultiple)^.Category := 'Base String';
-
-  RegOpM('Print', 'Print(n..n): output to console', {$IFDEF FPC}@{$ENDIF FPC}DoPrint)^.Category := 'Base String';
-  RegOpM('DoStatus', 'DoStatus(n..n): output to console', {$IFDEF FPC}@{$ENDIF FPC}DoPrint)^.Category := 'Base String';
-end;
-
-constructor TOpCustomRunTime.Create;
-begin
-  CustomCreate(512);
-end;
-
-constructor TOpCustomRunTime.CustomCreate(maxHashLen: Integer);
-begin
-  inherited Create;
-  ProcList := THashList.CustomCreate(maxHashLen);
-  ProcList.AutoFreeData := True;
-
-  Trigger := nil;
-
-  UserObject := nil;
-  UserData := nil;
-
-  InternalReg;
-end;
-
-destructor TOpCustomRunTime.Destroy;
-begin
-  DisposeObject(ProcList);
-  inherited Destroy;
 end;
 
 function TOpCustomRunTime.GetProcDescription(ProcName: SystemString): SystemString;
@@ -1468,12 +1607,12 @@ begin
       Result := p^.OnOpCall(p^.Param);
   if Assigned(p^.OnOpMethod) then
       Result := p^.OnOpMethod(p^.Param);
+  if Assigned(p^.OnOpProc) then
+      Result := p^.OnOpProc(p^.Param);
   if Assigned(p^.OnObjectOpCall) then
       Result := p^.OnObjectOpCall(opRT, p^.Param);
   if Assigned(p^.OnObjectOpMethod) then
       Result := p^.OnObjectOpMethod(opRT, p^.Param);
-  if Assigned(p^.OnOpProc) then
-      Result := p^.OnOpProc(p^.Param);
   if Assigned(p^.OnObjectOpProc) then
       Result := p^.OnObjectOpProc(opRT, p^.Param);
 end;

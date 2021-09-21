@@ -27,7 +27,7 @@ uses CoreClasses;
 
 type
   {
-    Progression event for time-base animations/simulations.<p>
+    Progression event for time-base animations/simulations.
     deltaTime is the time delta since last progress and newTime is the new
     time after the progress event is completed.
   }
@@ -44,10 +44,10 @@ type
   end;
 
   {
-    This component allows auto-progression of animation.<p>
+    This component allows auto-progression of animation.
     Basicly dropping this component and linking it to your app will send
     it real-time progression events (time will be measured in seconds) while
-    keeping the CPU 100% busy if possible (ie. if things change in your app).<p>
+    keeping the CPU 100% busy if possible (ie. if things change in your app).
     The progression time (the one you'll see in you progression events)
     is calculated using  (CurrentTime-OriginTime)*TimeMultiplier,
     CurrentTime being either manually or automatically updated using
@@ -57,7 +57,8 @@ type
   private
     { Private Declarations }
     FTimeMultiplier: Double;
-    lastTime, downTime, lastMultiplier: Double;
+    LastTime, DownTime, LastMultiplier: Double;
+    FLastDeltaTime: Double;
     FEnabled: Boolean;
     FSleepLength: Integer;
     FCurrentTime: Double;
@@ -70,79 +71,72 @@ type
     FProgressIntf: ICadencerProgressInterface;
   protected
     function StoreTimeMultiplier: Boolean;
-    procedure SetEnabled(const val: Boolean);
-    procedure SetTimeMultiplier(const val: Double);
+    procedure SetEnabled(const val_: Boolean);
+    procedure SetTimeMultiplier(const val_: Double);
     procedure SetCurrentTime(const Value: Double);
-    { : Returns raw ref time (no multiplier, no offset) }
+    { Returns raw ref time (no multiplier, no offset) }
     function GetRawReferenceTime: Double;
   public
     constructor Create;
     destructor Destroy; override;
 
-    { : Allows to manually trigger a progression.<p>
-      Time stuff is handled automatically.<br>
-      If cadencer is disabled, this functions does nothing. }
+    { Allows to manually trigger a progression. Time stuff is handled automatically. If cadencer is disabled, this functions does nothing. }
     procedure Progress;
 
-    { : Adjusts CurrentTime if necessary, then returns its value. }
+    { Adjusts CurrentTime if necessary, then returns its value. }
     function UpdateCurrentTime: Double;
 
-    { : Returns True if a "Progress" is underway.<p> }
+    { Returns True if a "Progress" is underway. }
     function IsBusy: Boolean;
 
-    { : Reset the time parameters and returns to zero.<p> }
+    { Reset the time parameters and returns to zero. }
     procedure Reset;
 
-    { : Value soustracted to current time to obtain progression time. }
+    { Value soustracted to current time to obtain progression time. }
     property OriginTime: Double read FOriginTime write FOriginTime;
-    { : Current time (manually or automatically set, see TimeReference). }
+    { Current time (manually or automatically set, see TimeReference). }
     property CurrentTime: Double read FCurrentTime write SetCurrentTime;
 
-    { : Enables/Disables cadencing.<p>
-      Disabling won't cause a jump when restarting, it is working like
-      a play/pause (ie. may modify OriginTime to keep things smooth). }
+    { Enables/Disables cadencing.
+      Disabling won't cause a jump when restarting, it is working like a play/pause (ie. may modify OriginTime to keep things smooth). }
     property Enabled: Boolean read FEnabled write SetEnabled default True;
 
-    { : Multiplier applied to the time reference.<p> }
+    { Multiplier applied to the time reference. }
     property TimeMultiplier: Double read FTimeMultiplier write SetTimeMultiplier stored StoreTimeMultiplier;
 
-    { : Maximum value for deltaTime in progression events.<p>
-      If null or negative, no max deltaTime is defined, otherwise, whenever
-      an event whose actual deltaTime would be superior to MaxDeltaTime
-      occurs, deltaTime is clamped to this max, and the extra time is hidden
-      by the cadencer (it isn't visible in CurrentTime either).<br>
-      This option allows to limit progression rate in simulations where
-      high values would result in errors/random behaviour. }
+    { Maximum value for deltaTime in progression events.
+      If null or negative, no max deltaTime is defined, otherwise, whenever an event whose actual deltaTime would be superior to MaxDeltaTime occurs,
+      deltaTime is clamped to this max, and the extra time is hidden by the cadencer (it isn't visible in CurrentTime either).
+      This option allows to limit progression rate in simulations where high values would result in errors/random behaviour. }
     property MaxDeltaTime: Double read FMaxDeltaTime write FMaxDeltaTime;
 
-    { : Minimum value for deltaTime in progression events.<p>
-      If superior to zero, this value specifies the minimum time step
-      between two progression events.<br>
-      This option allows to limit progression rate in simulations where
-      low values would result in errors/random behaviour. }
+    { Minimum value for deltaTime in progression events.
+      If superior to zero, this value specifies the minimum time step between two progression events.
+      This option allows to limit progression rate in simulations where low values would result in errors/random behaviour. }
     property MinDeltaTime: Double read FMinDeltaTime write FMinDeltaTime;
 
-    { : Fixed time-step value for progression events.<p>
-      If superior to zero, progression steps will happen with that fixed
-      delta time. The progression remains time based, so zero to N events
-      may be fired depending on the actual deltaTime (if deltaTime is
-      inferior to FixedDeltaTime, no event will be fired, if it is superior
-      to two times FixedDeltaTime, two events will be fired, etc.).<br>
-      This option allows to use fixed time steps in simulations (while the
-      animation and rendering itself may happen at a lower or higher
-      framerate). }
+    { Fixed time-step value for progression events.
+      If superior to zero, progression steps will happen with that fixed delta time.
+      The progression remains time based,
+      so zero to N events may be fired depending on the actual deltaTime (if deltaTime is inferior to FixedDeltaTime, no event will be fired,
+      if it is superior to two times FixedDeltaTime, two events will be fired, etc.).
+      This option allows to use fixed time steps in simulations (while the animation and rendering itself may happen at a lower or higher framerate). }
     property FixedDeltaTime: Double read FFixedDeltaTime write FFixedDeltaTime;
 
-    { : Allows relinquishing time to other threads/processes.<p>
-      A "sleep" is issued BEFORE each progress if SleepLength>=0 (see
-      help for the "sleep" procedure in delphi for details). }
+    { Allows relinquishing time to other threads/processes.
+      A "sleep" is issued BEFORE each progress if SleepLength>=0 (see help for the "sleep" procedure in delphi for details). }
     property SleepLength: Integer read FSleepLength write FSleepLength default -1;
+
+    { LastDeltaTime from progress. }
+    property LastDeltaTime: Double read FLastDeltaTime;
+
     { backcall }
     property OnProgress: TCadencerProgressMethod read FOnProgress write FOnProgress;
     property OnProgressCall: TCadencerProgressCall read FOnProgressCall write FOnProgressCall;
     property OnProgressProc: TCadencerProgressProc read FOnProgressProc write FOnProgressProc;
     { interface }
     property ProgressInterface: ICadencerProgressInterface read FProgressIntf write FProgressIntf;
+    property OnProgressInterface: ICadencerProgressInterface read FProgressIntf write FProgressIntf;
   end;
 
 implementation
@@ -152,27 +146,27 @@ begin
   Result := (FTimeMultiplier <> 1);
 end;
 
-procedure TCadencer.SetEnabled(const val: Boolean);
+procedure TCadencer.SetEnabled(const val_: Boolean);
 begin
-  if FEnabled <> val then
+  if FEnabled <> val_ then
     begin
-      FEnabled := val;
+      FEnabled := val_;
       if Enabled then
-          FOriginTime := FOriginTime + GetRawReferenceTime - downTime
+          FOriginTime := FOriginTime + GetRawReferenceTime - DownTime
       else
-          downTime := GetRawReferenceTime;
+          DownTime := GetRawReferenceTime;
     end;
 end;
 
-procedure TCadencer.SetTimeMultiplier(const val: Double);
+procedure TCadencer.SetTimeMultiplier(const val_: Double);
 var
   rawRef: Double;
 begin
-  if val <> FTimeMultiplier then
+  if val_ <> FTimeMultiplier then
     begin
-      if val = 0 then
+      if val_ = 0 then
         begin
-          lastMultiplier := FTimeMultiplier;
+          LastMultiplier := FTimeMultiplier;
           Enabled := False;
         end
       else
@@ -181,22 +175,18 @@ begin
           if FTimeMultiplier = 0 then
             begin
               Enabled := True;
-              // continuity of time: (rawRef-newOriginTime)*val = (rawRef-FOriginTime)*lastMultiplier
-              FOriginTime := rawRef - (rawRef - FOriginTime) * lastMultiplier / val;
+              FOriginTime := rawRef - (rawRef - FOriginTime) * LastMultiplier / val_;
             end
           else
-            begin
-              // continuity of time: (rawRef-newOriginTime)*val = (rawRef-FOriginTime)*FTimeMultiplier
-              FOriginTime := rawRef - (rawRef - FOriginTime) * FTimeMultiplier / val;
-            end;
+              FOriginTime := rawRef - (rawRef - FOriginTime) * FTimeMultiplier / val_;
         end;
-      FTimeMultiplier := val;
+      FTimeMultiplier := val_;
     end;
 end;
 
 procedure TCadencer.SetCurrentTime(const Value: Double);
 begin
-  lastTime := Value - (FCurrentTime - lastTime);
+  LastTime := Value - (FCurrentTime - LastTime);
   FOriginTime := FOriginTime + (FCurrentTime - Value);
   FCurrentTime := Value;
 end;
@@ -209,9 +199,12 @@ end;
 constructor TCadencer.Create;
 begin
   inherited Create;
-  downTime := GetRawReferenceTime;
-  FOriginTime := downTime;
+  DownTime := GetRawReferenceTime;
+  FOriginTime := DownTime;
   FTimeMultiplier := 1;
+  LastTime := 0;
+  LastMultiplier := 0;
+  FLastDeltaTime := 0;
   FSleepLength := -1;
   Enabled := True;
   FOnProgress := nil;
@@ -222,7 +215,8 @@ end;
 
 destructor TCadencer.Destroy;
 begin
-  Assert(FProgressing = 0);
+  while FProgressing > 0 do
+      TCompute.Sleep(1);
   inherited Destroy;
 end;
 
@@ -230,26 +224,26 @@ procedure TCadencer.Progress;
 var
   deltaTime, newTime, totalDelta: Double;
 begin
-  // basic protection against infinite loops,
-  // shall never happen, unless there is a bug in user code
+  { basic protection against infinite loops, }
+  { shall never happen, unless there is a bug in user code }
   if FProgressing < 0 then
       Exit;
   if Enabled then
     begin
-      // avoid stalling everything else...
+      { avoid stalling everything else... }
       if SleepLength >= 0 then
           TCoreClassThread.Sleep(SleepLength);
     end;
-  inc(FProgressing);
+  AtomInc(FProgressing);
   try
     if Enabled then
       begin
-        // One of the processed messages might have disabled us
+        { One of the processed messages might have disabled us }
         if Enabled then
           begin
-            // ...and progress !
+            { ...and progress ! }
             newTime := UpdateCurrentTime;
-            deltaTime := newTime - lastTime;
+            deltaTime := newTime - LastTime;
             if (deltaTime >= MinDeltaTime) and (deltaTime >= FixedDeltaTime) then
               begin
                 if FMaxDeltaTime > 0 then
@@ -258,7 +252,7 @@ begin
                       begin
                         FOriginTime := FOriginTime + (deltaTime - FMaxDeltaTime) / FTimeMultiplier;
                         deltaTime := FMaxDeltaTime;
-                        newTime := lastTime + deltaTime;
+                        newTime := LastTime + deltaTime;
                       end;
                   end;
                 totalDelta := deltaTime;
@@ -266,7 +260,8 @@ begin
                     deltaTime := FixedDeltaTime;
                 while totalDelta >= deltaTime do
                   begin
-                    lastTime := lastTime + deltaTime;
+                    LastTime := LastTime + deltaTime;
+                    FLastDeltaTime := deltaTime;
                     try
                       if Assigned(FOnProgress) then
                           FOnProgress(Self, deltaTime, newTime);
@@ -287,7 +282,7 @@ begin
           end;
       end;
   finally
-      dec(FProgressing);
+      AtomDec(FProgressing);
   end;
 end;
 
@@ -299,14 +294,14 @@ end;
 
 function TCadencer.IsBusy: Boolean;
 begin
-  Result := (FProgressing <> 0);
+  Result := (FProgressing > 0);
 end;
 
 procedure TCadencer.Reset;
 begin
-  lastTime := 0;
-  downTime := GetRawReferenceTime;
-  FOriginTime := downTime;
+  LastTime := 0;
+  DownTime := GetRawReferenceTime;
+  FOriginTime := DownTime;
 end;
 
 initialization
