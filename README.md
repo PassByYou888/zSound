@@ -11,7 +11,7 @@ zSound是从游戏引擎剥离而出的跨平台音频引擎，它支持所有�
 - FPC编译器支持:FPC3.0.4 or last,可参看本项目随附的[IOT入手指南](https://github.com/PassByYou888/ZServer4D/blob/master/Documents/%E5%85%A5%E6%89%8BIOT%E7%9A%84%E5%AE%8C%E5%85%A8%E6%94%BB%E7%95%A5.pdf)将FPC升级至github最新的版本
 - CodeTyphon 6.0 or last（尽量使用Online更新到最新的Cross工具链+相关库）
 
-## CPU架构支持，test with Delphi 10.2 update 1 Tokyo and FPC 3.0.4
+## CPU架构支持，test with Delphi 11/lazarus 3.2.0
 
 - MIPS(fpc-little endian), soft float, test pass on QEMU 
 - intel X86(fpc-x86), soft float
